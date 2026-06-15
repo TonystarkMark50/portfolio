@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2, Briefcase } from 'lucide-react';
 import { getInternships, upsertInternship, deleteInternship, Internship } from '../../lib/api';
 import ContentEditor, { InlineField, InlineTags, InlineSelect, InlineBool, useAutoSave } from './ContentEditor';
+import ConfirmationModal from '../ConfirmationModal';
+import type { ConfirmAction } from '../ConfirmationModal';
 
 const types = ['On-Site', 'Remote', 'Hybrid'];
 
 export default function AdminInternship() {
   const [items, setItems] = useState<Internship[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirm, setConfirm] = useState<{ open: boolean; action: ConfirmAction; onConfirm: () => void }>({ open: false, action: { title: '', message: '' }, onConfirm: () => {} });
 
   useEffect(() => { load(); }, []);
 
@@ -36,15 +39,29 @@ export default function AdminInternship() {
     load();
   }
 
-  async function removeEntry(id: string) {
-    if (!confirm('Delete this internship?')) return;
-    await deleteInternship(id);
-    load();
+  function removeEntry(id: string) {
+    const item = items.find(i => i.id === id);
+    setConfirm({
+      open: true,
+      action: {
+        title: 'Delete Internship',
+        message: `Delete "${item?.role || 'this internship'}" at ${item?.organization || 'this organization'}? This action cannot be undone.`,
+        confirmLabel: 'Delete',
+        variant: 'danger',
+        icon: 'trash',
+      },
+      onConfirm: async () => {
+        await deleteInternship(id);
+        load();
+      },
+    });
   }
 
   if (loading) return <div className="animate-pulse h-40 bg-gray-800 rounded-xl" />;
 
   return (
+    <>
+    <ConfirmationModal open={confirm.open} action={confirm.action} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(prev => ({ ...prev, open: false }))} />
     <ContentEditor section="internship" title="Internships" subtitle="Your work experience — click to edit" status={status}
       actions={
         <button onClick={addEntry} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors">
@@ -86,5 +103,6 @@ export default function AdminInternship() {
         </div>
       ))}
     </ContentEditor>
+    </>
   );
 }

@@ -286,6 +286,14 @@ export async function getProjects() {
   return getAll<Project>('projects', 'display_order');
 }
 
+export async function upsertProject(project: Partial<Project>) {
+  return upsert<Project>('projects', project);
+}
+
+export async function deleteProject(id: string) {
+  return remove('projects', id);
+}
+
 // ============================================================
 // Site Settings
 // ============================================================

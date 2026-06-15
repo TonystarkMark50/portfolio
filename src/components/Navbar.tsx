@@ -1,7 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Menu, X, Github, Linkedin, Mail, Download } from 'lucide-react';
 import { useActiveSection } from '../hooks/useScroll';
+import { useSupabaseData } from '../hooks/usePortfolioData';
+import { loadProfile, loadContactInfo } from '../lib/loaders';
 import ThemeToggle from './ThemeToggle';
+import ConfirmationModal from './ConfirmationModal';
+import type { ConfirmAction } from './ConfirmationModal';
 
 const NAVBAR_HEIGHT = 80;
 
@@ -23,6 +27,9 @@ export default function Navbar() {
   const [hasInteracted, setHasInteracted] = useState(false);
   const sectionIds = useMemo(() => navItems.map(item => item.id), []);
   const activeSection = useActiveSection(sectionIds);
+  const { data: profile } = useSupabaseData(loadProfile);
+  const { data: contactInfo } = useSupabaseData(loadContactInfo);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,6 +45,11 @@ export default function Navbar() {
   const handleResumeClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     setIsMobileMenuOpen(false);
+    setShowDownloadModal(true);
+  };
+
+  const confirmResumeDownload = async () => {
+    setShowDownloadModal(false);
     try {
       const { generateAndDownloadResume } = await import('../utils/generateResume');
       await generateAndDownloadResume();
@@ -58,6 +70,18 @@ export default function Navbar() {
 
   return (
     <>
+      <ConfirmationModal
+        open={showDownloadModal}
+        action={{
+          title: 'Download Resume',
+          message: 'Would you like to download the latest version of my resume?',
+          confirmLabel: 'Download Resume',
+          variant: 'download',
+          icon: 'download',
+        }}
+        onConfirm={confirmResumeDownload}
+        onCancel={() => setShowDownloadModal(false)}
+      />
       <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
           isScrolled
@@ -109,7 +133,7 @@ export default function Navbar() {
               </button>
             </div>
             <a
-              href="https://github.com/Jagadeesh-Thulasiraman"
+              href={profile?.github || 'https://github.com'}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="GitHub Profile"
@@ -118,7 +142,7 @@ export default function Navbar() {
               <Github className="w-5 h-5 text-theme-secondary" />
             </a>
             <a
-              href="https://www.linkedin.com/in/jagadeesh-t-583b58326/"
+              href={profile?.linkedin || 'https://linkedin.com'}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn Profile"
@@ -188,7 +212,7 @@ export default function Navbar() {
                 <span>Download Resume</span>
               </button>
               <a
-                href="mailto:shakthijagadeesh907@gmail.com"
+                href={`mailto:${contactInfo?.email || profile?.email || ''}`}
                 aria-label="Send Email"
                 className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-theme-secondary hover:bg-gray-100/50 dark:hover:bg-white/5 transition-all duration-300 group"
               >

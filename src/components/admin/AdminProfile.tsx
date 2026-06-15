@@ -1,11 +1,18 @@
-import { useState, useEffect } from 'react';
-import { Mail, MapPin, Link as LinkIcon, Github, Linkedin } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Mail, MapPin, Link as LinkIcon, Github, Linkedin, Camera, Upload } from 'lucide-react';
 import { getProfile, upsertProfile, Profile } from '../../lib/api';
+import { supabase } from '../../lib/supabase';
+import { useToast } from '../../context/ToastContext';
 import ContentEditor, { InlineField, useAutoSave } from './ContentEditor';
+
+const PROFILE_BUCKET = 'resume-assets';
 
 export default function AdminProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const { addToast } = useToast();
 
   useEffect(() => {
     getProfile().then(({ data }) => { if (data) setProfile(data); setLoading(false); });
@@ -25,6 +32,42 @@ export default function AdminProfile() {
     triggerSave();
   }
 
+  async function handlePhotoUpload(file: File) {
+    if (!profile) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `profile-photo.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(PROFILE_BUCKET)
+        .upload(fileName, file, { cacheControl: '3600', upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(PROFILE_BUCKET)
+        .getPublicUrl(fileName);
+
+      const cacheBustUrl = `${publicUrl}?t=${Date.now()}`;
+
+      const { error: dbError } = await upsertProfile({
+        ...profile,
+        profile_photo_url: cacheBustUrl,
+      });
+
+      if (dbError) throw dbError;
+
+      setProfile({ ...profile, profile_photo_url: cacheBustUrl });
+      addToast('success', 'Profile photo updated');
+    } catch (err) {
+      console.error('Photo upload failed:', err);
+      addToast('error', 'Failed to upload photo');
+    } finally {
+      setUploading(false);
+    }
+  }
+
   if (loading) return <div className="animate-pulse h-40 bg-gray-800 rounded-xl" />;
   if (!profile) return <div className="text-gray-400">No profile data found</div>;
 
@@ -34,10 +77,38 @@ export default function AdminProfile() {
       <div className="bg-gray-800/50 rounded-xl border border-gray-700 overflow-hidden">
         <div className="h-20 bg-gradient-to-r from-blue-600/20 to-purple-600/20" />
         <div className="px-5 pb-5 -mt-10">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-3xl font-bold shadow-lg ring-4 ring-gray-900 overflow-hidden mb-3">
-            {profile.profile_photo_url ? (
-              <img src={profile.profile_photo_url} alt="" className="w-full h-full object-cover" />
-            ) : (profile.name?.[0]?.toUpperCase() || '?')}
+          {/* Photo Upload */}
+          <div className="relative w-20 h-20 mb-3 group">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-3xl font-bold shadow-lg ring-4 ring-gray-900 overflow-hidden">
+              {profile.profile_photo_url ? (
+                <img src={profile.profile_photo_url} alt="" className="w-full h-full object-cover" />
+              ) : (profile.name?.[0]?.toUpperCase() || '?')}
+            </div>
+            <input
+              type="file"
+              ref={fileRef}
+              accept="image/*"
+              className="hidden"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) handlePhotoUpload(file);
+                e.target.value = '';
+              }}
+            />
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1 text-xs text-white font-medium disabled:opacity-50"
+            >
+              {uploading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Camera className="w-3.5 h-3.5" />
+                  Upload
+                </>
+              )}
+            </button>
           </div>
           <div className="space-y-3">
             <InlineField value={profile.name || ''} onSave={v => update('name', v)} placeholder="Your name" label="Name" />

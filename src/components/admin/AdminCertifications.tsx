@@ -4,6 +4,8 @@ import { getCertifications, upsertCertification, deleteCertification, Certificat
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
 import ContentEditor, { InlineField, InlineTags, InlineUrlButton, useAutoSave } from './ContentEditor';
+import ConfirmationModal from '../ConfirmationModal';
+import type { ConfirmAction } from '../ConfirmationModal';
 
 const LOGO_BUCKET = 'certification-logos';
 
@@ -13,6 +15,7 @@ export default function AdminCertifications() {
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const { addToast } = useToast();
+  const [confirm, setConfirm] = useState<{ open: boolean; action: ConfirmAction; onConfirm: () => void }>({ open: false, action: { title: '', message: '' }, onConfirm: () => {} });
 
   useEffect(() => { load(); }, []);
 
@@ -41,10 +44,22 @@ export default function AdminCertifications() {
     load();
   }
 
-  async function removeCert(id: string) {
-    if (!confirm('Delete this certification?')) return;
-    await deleteCertification(id);
-    load();
+  function removeCert(id: string) {
+    const item = items.find(i => i.id === id);
+    setConfirm({
+      open: true,
+      action: {
+        title: 'Delete Certification',
+        message: `Delete "${item?.title || 'this certification'}"? This action cannot be undone.`,
+        confirmLabel: 'Delete',
+        variant: 'danger',
+        icon: 'trash',
+      },
+      onConfirm: async () => {
+        await deleteCertification(id);
+        load();
+      },
+    });
   }
 
   async function handleLogoUpload(id: string, file: File) {
@@ -62,6 +77,8 @@ export default function AdminCertifications() {
   if (loading) return <div className="animate-pulse h-40 bg-gray-800 rounded-xl" />;
 
   return (
+    <>
+    <ConfirmationModal open={confirm.open} action={confirm.action} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(prev => ({ ...prev, open: false }))} />
     <ContentEditor section="certifications" title="Certifications" subtitle="Your certifications and credentials" status={status}
       actions={
         <button onClick={addCert} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors">
@@ -115,5 +132,6 @@ export default function AdminCertifications() {
         </div>
       ))}
     </ContentEditor>
+    </>
   );
 }

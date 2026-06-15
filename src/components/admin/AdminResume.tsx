@@ -183,7 +183,7 @@ export default function AdminResume() {
       const h = contentRef.current.scrollHeight;
       setPageCount(Math.max(1, Math.ceil(h / 950)));
     }
-  }, [resumeData, zoom, template]);
+  }, [zoom]);
 
   function scrollToTop() {
     previewRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -200,11 +200,11 @@ export default function AdminResume() {
   // ── Data State ──
   const [profile, setProfile] = useState<EditableProfile>({ name: '', title: '', email: '', phone: '', location: '', linkedin: '', github: '' });
   const [summary, setSummary] = useState('');
-  const [education, setEducation] = useState<Education[]>([]);
-  const [internships, setInternships] = useState<Internship[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [certifications, setCertifications] = useState<Certification[]>([]);
+  const [education, setEducation] = useState<import('../../lib/api').Education[]>([]);
+  const [internships, setInternships] = useState<import('../../lib/api').Internship[]>([]);
+  const [projects, setProjects] = useState<import('../../lib/api').Project[]>([]);
+  const [skills, setSkills] = useState<import('../../lib/api').Skill[]>([]);
+  const [certifications, setCertifications] = useState<import('../../lib/api').Certification[]>([]);
   const [template, setTemplate] = useState<ResumeTemplate>('classic');
   const [sections, setSections] = useState<ResumeSections>(DEFAULT_SECTIONS);
 

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Upload, Image, FileText, Trash2, Copy, Check, ExternalLink, Search, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
+import ConfirmationModal from '../ConfirmationModal';
+import type { ConfirmAction } from '../ConfirmationModal';
 
 interface MediaItem {
   name: string;
@@ -21,6 +23,7 @@ export default function AdminMedia() {
   const [activeBucket, setActiveBucket] = useState('certification-logos');
   const fileRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
+  const [confirm, setConfirm] = useState<{ open: boolean; action: ConfirmAction; onConfirm: () => void }>({ open: false, action: { title: '', message: '' }, onConfirm: () => {} });
 
   useEffect(() => { loadBucket(activeBucket); }, [activeBucket]);
 
@@ -48,11 +51,22 @@ export default function AdminMedia() {
     setUploading(false);
   }
 
-  async function handleDelete(name: string) {
-    if (!confirm(`Delete "${name}"?`)) return;
-    const { error } = await supabase.storage.from(activeBucket).remove([name]);
-    if (error) { addToast('error', 'Delete failed'); }
-    else { addToast('success', 'File deleted'); loadBucket(activeBucket); }
+  function handleDelete(name: string) {
+    setConfirm({
+      open: true,
+      action: {
+        title: 'Delete File',
+        message: `Delete "${name}"? This action cannot be undone.`,
+        confirmLabel: 'Delete',
+        variant: 'danger',
+        icon: 'trash',
+      },
+      onConfirm: async () => {
+        const { error } = await supabase.storage.from(activeBucket).remove([name]);
+        if (error) { addToast('error', 'Delete failed'); }
+        else { addToast('success', 'File deleted'); loadBucket(activeBucket); }
+      },
+    });
   }
 
   function copyUrl(url: string) {
@@ -65,6 +79,8 @@ export default function AdminMedia() {
   const filtered = search ? items.filter(i => i.name.toLowerCase().includes(search.toLowerCase())) : items;
 
   return (
+    <>
+    <ConfirmationModal open={confirm.open} action={confirm.action} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(prev => ({ ...prev, open: false }))} />
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -152,5 +168,6 @@ export default function AdminMedia() {
         </div>
       )}
     </div>
+    </>
   );
 }

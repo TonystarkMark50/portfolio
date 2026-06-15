@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import CommandPalette from './CommandPalette';
+import ConfirmationModal from '../ConfirmationModal';
+import type { ConfirmAction } from '../ConfirmationModal';
 
 export type AdminTab =
   | 'dashboard' | 'profile' | 'about' | 'skills' | 'projects'
@@ -75,6 +77,7 @@ export default function AdminLayout({
   const notifRef = useRef<HTMLDivElement>(null);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   const toastTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const [confirm, setConfirm] = useState<{ open: boolean; action: ConfirmAction; onConfirm: () => void }>({ open: false, action: { title: '', message: '' }, onConfirm: () => {} });
 
   function showToast(message: string, type: 'error' | 'success' = 'error') {
     setToast({ message, type });
@@ -86,8 +89,11 @@ export default function AdminLayout({
     loadNotifications();
     const interval = setInterval(loadNotifications, 30000);
     const sub = supabase
-      .channel('contact_submissions_notif')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_submissions' }, () => {
+      .channel('notifications_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
+        loadNotifications();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'contact_submissions' }, () => {
         loadNotifications();
       })
       .subscribe();
@@ -95,13 +101,26 @@ export default function AdminLayout({
   }, []);
 
   async function loadNotifications() {
-    const [countRes, msgsRes] = await Promise.all([
-      supabase.from('contact_submissions').select('*', { count: 'exact', head: true }).eq('is_read', false),
-      supabase.from('contact_submissions').select('id, name, created_at, is_read').order('created_at', { ascending: false }).limit(10)
+    const [notifRes, countRes, msgsRes] = await Promise.all([
+      supabase.from('notifications').select('id, title, message, is_read, created_at').order('created_at', { ascending: false }).limit(20),
+      supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('is_read', false),
+      supabase.from('contact_submissions').select('id, name, created_at, is_read').order('created_at', { ascending: false }).limit(5)
     ]);
-    if (countRes.count !== null) setUnreadNotifs(countRes.count);
+
+    const allNotifications: { id: string; text: string; time: string; icon: any; read: boolean }[] = [];
+
+    if (notifRes.data) {
+      allNotifications.push(...notifRes.data.map(n => ({
+        id: n.id,
+        text: n.message,
+        time: formatTimeAgo(n.created_at),
+        icon: Bell,
+        read: n.is_read,
+      })));
+    }
+
     if (msgsRes.data) {
-      setNotifications(msgsRes.data.map(m => ({
+      allNotifications.push(...msgsRes.data.map(m => ({
         id: m.id,
         text: `New message from ${m.name}`,
         time: formatTimeAgo(m.created_at),
@@ -109,6 +128,13 @@ export default function AdminLayout({
         read: m.is_read,
       })));
     }
+
+    allNotifications.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+    setNotifications(allNotifications.slice(0, 20));
+
+    const notifUnread = countRes.count || 0;
+    const msgUnread = msgsRes.data?.filter(m => !m.is_read).length || 0;
+    setUnreadNotifs(notifUnread + msgUnread);
   }
 
   function formatTimeAgo(date: string) {
@@ -135,21 +161,43 @@ export default function AdminLayout({
     setUnreadNotifs(prev => Math.max(0, prev - 1));
   }
 
-  async function deleteNotification(e: React.MouseEvent, id: string) {
+  function deleteNotification(e: React.MouseEvent, id: string) {
     e.stopPropagation();
-    if (!confirm('Delete this notification?')) return;
-    const { error } = await supabase.from('contact_submissions').delete().eq('id', id);
-    if (error) { showToast('Failed to delete notification'); return; }
-    setNotifications(prev => prev.filter(n => n.id !== id));
-    loadNotifications();
+    setConfirm({
+      open: true,
+      action: {
+        title: 'Delete Notification',
+        message: 'Delete this notification? This action cannot be undone.',
+        confirmLabel: 'Delete',
+        variant: 'danger',
+        icon: 'trash',
+      },
+      onConfirm: async () => {
+        const { error } = await supabase.from('contact_submissions').delete().eq('id', id);
+        if (error) { showToast('Failed to delete notification'); return; }
+        setNotifications(prev => prev.filter(n => n.id !== id));
+        loadNotifications();
+      },
+    });
   }
 
-  async function clearAll() {
-    if (!confirm('Delete all notifications?')) return;
-    const { error } = await supabase.from('contact_submissions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    if (error) { showToast('Failed to clear notifications'); return; }
-    setNotifications([]);
-    setUnreadNotifs(0);
+  function clearAll() {
+    setConfirm({
+      open: true,
+      action: {
+        title: 'Clear All Notifications',
+        message: 'Delete all notifications? This action cannot be undone.',
+        confirmLabel: 'Clear All',
+        variant: 'danger',
+        icon: 'trash',
+      },
+      onConfirm: async () => {
+        const { error } = await supabase.from('contact_submissions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        if (error) { showToast('Failed to clear notifications'); return; }
+        setNotifications([]);
+        setUnreadNotifs(0);
+      },
+    });
   }
 
   useEffect(() => {
@@ -174,6 +222,7 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
+      <ConfirmationModal open={confirm.open} action={confirm.action} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(prev => ({ ...prev, open: false }))} />
       <CommandPalette onNavigate={onTabChange} open={cmdOpen} onClose={() => setCmdOpen(false)} />
 
       {toast && (
@@ -249,7 +298,17 @@ export default function AdminLayout({
             </div>
             {!collapsed && <span>Deployed</span>}
           </div>
-          <button onClick={logout} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+          <button onClick={() => setConfirm({
+            open: true,
+            action: {
+              title: 'Logout',
+              message: 'Are you sure you want to logout?',
+              confirmLabel: 'Logout',
+              variant: 'warning',
+              icon: 'logout',
+            },
+            onConfirm: logout,
+          })} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors">
             <LogOut className="w-4 h-4 shrink-0" />
             {!collapsed && <span>Logout</span>}
           </button>

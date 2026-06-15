@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2, Map, Star, MapPin, Award, Heart, Target } from 'lucide-react';
 import { getJourney, upsertJourneyEntry, deleteJourneyEntry, Journey } from '../../lib/api';
 import ContentEditor, { InlineField, InlineSelect, useAutoSave } from './ContentEditor';
+import ConfirmationModal from '../ConfirmationModal';
+import type { ConfirmAction } from '../ConfirmationModal';
 
 const iconOptions = [
   { value: 'Star', icon: Star },
@@ -16,6 +18,7 @@ const types = ['milestone', 'achievement', 'event'];
 export default function AdminJourney() {
   const [items, setItems] = useState<Journey[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirm, setConfirm] = useState<{ open: boolean; action: ConfirmAction; onConfirm: () => void }>({ open: false, action: { title: '', message: '' }, onConfirm: () => {} });
 
   useEffect(() => { load(); }, []);
 
@@ -44,10 +47,22 @@ export default function AdminJourney() {
     load();
   }
 
-  async function removeEntry(id: string) {
-    if (!confirm('Delete this entry?')) return;
-    await deleteJourneyEntry(id);
-    load();
+  function removeEntry(id: string) {
+    const item = items.find(i => i.id === id);
+    setConfirm({
+      open: true,
+      action: {
+        title: 'Delete Journey Entry',
+        message: `Delete "${item?.title || 'this entry'}"? This action cannot be undone.`,
+        confirmLabel: 'Delete',
+        variant: 'danger',
+        icon: 'trash',
+      },
+      onConfirm: async () => {
+        await deleteJourneyEntry(id);
+        load();
+      },
+    });
   }
 
   function IconPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -69,6 +84,8 @@ export default function AdminJourney() {
   if (loading) return <div className="animate-pulse h-40 bg-gray-800 rounded-xl" />;
 
   return (
+    <>
+    <ConfirmationModal open={confirm.open} action={confirm.action} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(prev => ({ ...prev, open: false }))} />
     <ContentEditor section="journey" title="Journey" subtitle="Your career timeline milestones" status={status}
       actions={
         <button onClick={addEntry} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors">
@@ -120,5 +137,6 @@ export default function AdminJourney() {
         </div>
       )}
     </ContentEditor>
+    </>
   );
 }

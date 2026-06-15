@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Mail, Search, Inbox, Archive, ExternalLink, MessageSquare, Trash2, Filter, Check } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import ConfirmationModal from '../ConfirmationModal';
+import type { ConfirmAction } from '../ConfirmationModal';
 
 interface Contact {
   id: string; name: string; email: string; subject: string; message: string;
@@ -14,6 +16,7 @@ export default function AdminContacts() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selected, setSelected] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [confirm, setConfirm] = useState<{ open: boolean; action: ConfirmAction; onConfirm: () => void }>({ open: false, action: { title: '', message: '' }, onConfirm: () => {} });
 
   useEffect(() => {
     load();
@@ -45,12 +48,24 @@ export default function AdminContacts() {
     load();
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this message?')) return;
-    const { error } = await supabase.from('contact_submissions').delete().eq('id', id);
-    if (error) console.error('Failed to delete message:', error);
-    if (selected === id) setSelected(null);
-    load();
+  function handleDelete(id: string) {
+    const msg = contacts.find(c => c.id === id);
+    setConfirm({
+      open: true,
+      action: {
+        title: 'Delete Message',
+        message: `Delete message from "${msg?.name || 'this contact'}"? This action cannot be undone.`,
+        confirmLabel: 'Delete',
+        variant: 'danger',
+        icon: 'trash',
+      },
+      onConfirm: async () => {
+        const { error } = await supabase.from('contact_submissions').delete().eq('id', id);
+        if (error) console.error('Failed to delete message:', error);
+        if (selected === id) setSelected(null);
+        load();
+      },
+    });
   }
 
   const filtered = contacts.filter(c => {
@@ -68,6 +83,8 @@ export default function AdminContacts() {
   if (loading) return <div className="animate-pulse h-64 bg-gray-800 rounded-xl" />;
 
   return (
+    <>
+    <ConfirmationModal open={confirm.open} action={confirm.action} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(prev => ({ ...prev, open: false }))} />
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
@@ -182,5 +199,6 @@ export default function AdminContacts() {
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -6,6 +6,8 @@ import { loadResumeData, ResumeData } from '../lib/loaders';
 import { trackResumeDownload } from '../lib/analytics';
 import { getResumeDownloadCount } from '../lib/supabase';
 import { generateAndDownloadResume } from '../utils/generateResume';
+import ConfirmationModal from '../components/ConfirmationModal';
+import type { ConfirmAction } from '../components/ConfirmationModal';
 
 function mapResumeForDisplay(data: ResumeData) {
   const p = data.personalInfo;
@@ -43,8 +45,10 @@ export default function Resume() {
   const { data: initialCount } = useSupabaseData(getResumeDownloadCount);
   const [downloads, setDownloads] = useState(0);
   const resumeRef = useRef<HTMLDivElement>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
 
   const handleDownload = async () => {
+    setShowDownloadModal(false);
     await Promise.all([trackResumeDownload(), generateAndDownloadResume()]);
     setDownloads(prev => prev + 1);
   };
@@ -72,8 +76,20 @@ export default function Resume() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-theme-primary mb-4">
               <span className="gradient-text">Professional</span> Profile
             </h2>
+            <ConfirmationModal
+              open={showDownloadModal}
+              action={{
+                title: 'Download Resume',
+                message: 'Would you like to download the latest version of my resume?',
+                confirmLabel: 'Download Resume',
+                variant: 'download',
+                icon: 'download',
+              }}
+              onConfirm={handleDownload}
+              onCancel={() => setShowDownloadModal(false)}
+            />
             <button
-              onClick={handleDownload}
+              onClick={() => setShowDownloadModal(true)}
               className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-primary-500 to-accent-500 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-glow"
             >
               <Download className="w-5 h-5" />

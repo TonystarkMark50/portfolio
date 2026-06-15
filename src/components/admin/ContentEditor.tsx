@@ -138,7 +138,7 @@ export function useAutoSave(saveFn: () => Promise<void>) {
       } catch {
         if (mountedRef.current) setStatus('error');
       }
-    }, 1500);
+    }, 1000);
   }, []);
 
   const saveNow = useCallback(async () => {

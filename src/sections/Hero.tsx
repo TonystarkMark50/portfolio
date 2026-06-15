@@ -8,6 +8,8 @@ import { useMousePosition } from '../hooks/useScroll';
 import { useSupabaseData } from '../hooks/usePortfolioData';
 import { loadProfile, loadAbout } from '../lib/loaders';
 import { trackResumeDownload } from '../lib/analytics';
+import ConfirmationModal from '../components/ConfirmationModal';
+import type { ConfirmAction } from '../components/ConfirmationModal';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -99,12 +101,14 @@ export default function Hero() {
   const { data: profile } = useSupabaseData(loadProfile);
   const { data: aboutData } = useSupabaseData(loadAbout);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const handleResumeDownload = async () => {
+    setShowDownloadModal(false);
     if (isGenerating) return;
     setIsGenerating(true);
     try {
@@ -208,8 +212,20 @@ export default function Hero() {
               </a>
 
               <div className="relative group">
+                <ConfirmationModal
+                  open={showDownloadModal}
+                  action={{
+                    title: 'Download Resume',
+                    message: 'Would you like to download the latest version of my resume?',
+                    confirmLabel: 'Download Resume',
+                    variant: 'download',
+                    icon: 'download',
+                  }}
+                  onConfirm={handleResumeDownload}
+                  onCancel={() => setShowDownloadModal(false)}
+                />
                 <button
-                  onClick={handleResumeDownload}
+                  onClick={() => setShowDownloadModal(true)}
                   disabled={isGenerating}
                   className="relative inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold text-white bg-gradient-to-r from-primary-500 to-accent-500 overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-glow disabled:opacity-70 disabled:cursor-wait"
                 >
@@ -282,14 +298,14 @@ export default function Hero() {
             >
               <div className="rounded-3xl bg-white/10 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-2xl overflow-hidden p-4 sm:p-6">
                 <div className="w-56 h-56 sm:w-64 sm:h-64 xl:w-72 xl:h-72 rounded-2xl overflow-hidden border-[3px] border-white/30 shadow-xl hover:border-primary-400/60 transition-all duration-500 hover:scale-[1.02]">
-                  {imgError ? (
+                  {imgError || !profile?.profile_photo_url ? (
                     <div className="w-full h-full bg-gradient-to-br from-primary-500/30 to-accent-500/30 flex items-center justify-center">
-                      <span className="text-3xl font-bold text-white/60">JT</span>
+                      <span className="text-3xl font-bold text-white/60">{profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'JT'}</span>
                     </div>
                   ) : (
                     <img
-                      src="/assets/images/profile.jpg"
-                      alt="Jagadeesh T"
+                      src={profile.profile_photo_url}
+                      alt={profile.name || 'Profile'}
                       className="w-full h-full object-cover object-center"
                       loading="lazy"
                       onError={() => setImgError(true)}

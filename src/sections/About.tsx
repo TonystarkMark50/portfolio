@@ -42,15 +42,11 @@ export default function About() {
 
           {/* Content */}
           <div className="max-w-4xl mx-auto space-y-5">
-            <p className="text-theme-secondary text-lg leading-relaxed">
-              {aboutData.content[0]}
-            </p>
-            <p className="text-theme-secondary text-lg leading-relaxed">
-              {aboutData.content[1]}
-            </p>
-            <p className="text-theme-secondary text-lg leading-relaxed">
-              {aboutData.content[2]}
-            </p>
+            {aboutData.content.map((paragraph, idx) => (
+              <p key={idx} className="text-theme-secondary text-lg leading-relaxed">
+                {paragraph}
+              </p>
+            ))}
           </div>
         </div>
       </div>
