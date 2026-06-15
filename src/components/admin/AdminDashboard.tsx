@@ -4,7 +4,7 @@ import {
   Clock, CheckCircle, AlertTriangle, Sparkles, Activity, Monitor, Tablet, Smartphone,
   Edit3, Eye, RefreshCw, Download, ShieldCheck, ShieldAlert, Globe, Image,
   Github, Linkedin, Upload, BarChart3, Settings,
-  ChevronRight, Zap, Moon, MessageSquare
+  ChevronRight, Zap, Moon,   MessageSquare, Bell
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import {
@@ -704,14 +704,35 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
         </div>
       </div>
 
-      {/* ─────── SECTION 7: SETTINGS (quick) ─────── */}
+      {/* ─────── SECTION 7: SETTINGS (quick) + Notif Test ─────── */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2.5">
             <Settings className="w-4 h-4 text-blue-400" />
             <h3 className="text-sm font-semibold text-white">Settings</h3>
           </div>
-          <NavBtn tab="settings" label="Full settings" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                const { error } = await supabase.from('notifications').insert({
+                  type: 'test',
+                  title: 'Test Notification',
+                  message: 'This is a test notification - if you see this the system works!',
+                  metadata: { test: true, source: 'admin-dashboard' },
+                  is_read: false,
+                });
+                if (error) {
+                  alert('ERROR: ' + error.message);
+                } else {
+                  alert('Test notification created! Check the bell icon.');
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-medium hover:bg-amber-500/20 transition-colors"
+            >
+              <Bell className="w-3.5 h-3.5" /> Test Notification
+            </button>
+            <NavBtn tab="settings" label="Full settings" />
+          </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-3">

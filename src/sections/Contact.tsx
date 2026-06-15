@@ -242,6 +242,7 @@ export default function Contact() {
                   ref={nameRef}
                   type="text"
                   id="name"
+                  name="name"
                   autoComplete="name"
                   required
                   placeholder="John Doe"
@@ -270,6 +271,7 @@ export default function Contact() {
                 <input
                   type="email"
                   id="email"
+                  name="email"
                   autoComplete="email"
                   required
                   placeholder="john@example.com"
@@ -298,6 +300,7 @@ export default function Contact() {
                 <input
                   type="text"
                   id="subject"
+                  name="subject"
                   autoComplete="off"
                   required
                   placeholder="Collaboration Opportunity"
@@ -325,6 +328,7 @@ export default function Contact() {
                 </label>
                 <textarea
                   id="message"
+                  name="message"
                   required
                   placeholder="Tell me about your project or inquiry..."
                   rows={5}
