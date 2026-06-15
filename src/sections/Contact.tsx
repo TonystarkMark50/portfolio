@@ -50,7 +50,6 @@ function validateForm(data: { name: string; email: string; subject: string; mess
 
 export default function Contact() {
   const { data: contactInfoData } = useSupabaseData(loadContactInfo);
-  if (!contactInfoData) return null;
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -62,6 +61,7 @@ export default function Contact() {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const formRef = useRef<HTMLFormElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
+  if (!contactInfoData) return null;
 
   const handleChange = useCallback((field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

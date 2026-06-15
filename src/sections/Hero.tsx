@@ -97,13 +97,11 @@ export default function Hero() {
   const [imgError, setImgError] = useState(false);
   const { data: profile } = useSupabaseData(loadProfile);
   const { data: aboutData } = useSupabaseData(loadAbout);
-  if (!profile || !aboutData) return null;
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleResumeDownload = async () => {
     if (isGenerating) return;
@@ -120,6 +118,8 @@ export default function Hero() {
   const parallaxY = useSpring(mouseY, { stiffness: 100, damping: 30 });
   const bgX = useTransform(parallaxX, [0, window.innerWidth], [-20, 20]);
   const bgY = useTransform(parallaxY, [0, window.innerHeight], [-20, 20]);
+
+  if (!profile || !aboutData) return null;
 
   return (
     <section
