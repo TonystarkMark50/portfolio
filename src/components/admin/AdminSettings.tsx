@@ -1,18 +1,12 @@
-import { useState, useEffect, FormEvent } from 'react';
-import { Save, Globe, Search, Palette, Link as LinkIcon, Mail } from 'lucide-react';
-import { getSiteSettings, upsertSiteSettings, SiteSettings } from '../../lib/api';
-import { getContactInfo, upsertContactInfo, ContactInfo } from '../../lib/api';
+import { useState, useEffect } from 'react';
+import { Globe, Search, Palette, Link as LinkIcon, Mail, Github, Linkedin, Save } from 'lucide-react';
+import { getSiteSettings, upsertSiteSettings, getContactInfo, upsertContactInfo } from '../../lib/api';
+import ContentEditor, { InlineField, InlineSelect, useAutoSave } from './ContentEditor';
 
 export default function AdminSettings() {
-  const [settings, setSettings] = useState<Partial<SiteSettings>>({
-    site_title: '', seo_description: '', seo_keywords: '', theme: 'light', favicon_url: '',
-  });
-  const [contact, setContact] = useState<Partial<ContactInfo>>({
-    email: '', github: '', linkedin: '', location: '', portfolio_url: '', phone: '',
-  });
+  const [settings, setSettings] = useState<any>({ site_title: '', seo_description: '', seo_keywords: '', theme: 'dark', favicon_url: '' });
+  const [contact, setContact] = useState<any>({ email: '', github: '', linkedin: '', location: '', portfolio_url: '', phone: '' });
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saveMsg, setSaveMsg] = useState('');
 
   useEffect(() => {
     async function load() {
@@ -24,134 +18,88 @@ export default function AdminSettings() {
     load();
   }, []);
 
-  async function handleSaveSettings(e: FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    const { error } = await upsertSiteSettings(settings);
-    if (!error) { setSaveMsg('Settings saved!'); setTimeout(() => setSaveMsg(''), 2000); }
-    setSaving(false);
+  async function saveSettings() {
+    await upsertSiteSettings(settings);
   }
 
-  async function handleSaveContact(e: FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    const { error } = await upsertContactInfo(contact);
-    if (!error) { setSaveMsg('Contact saved!'); setTimeout(() => setSaveMsg(''), 2000); }
-    setSaving(false);
+  async function saveContact() {
+    await upsertContactInfo(contact);
   }
 
-  if (loading) return <div className="animate-pulse h-40 bg-gray-200 dark:bg-dark-700 rounded-2xl" />;
+  const { status: settingsStatus, triggerSave: triggerSettingsSave } = useAutoSave(saveSettings, [settings]);
+  const { status: contactStatus, triggerSave: triggerContactSave } = useAutoSave(saveContact, [contact]);
+
+  function updateSetting(key: string, val: string) {
+    setSettings((prev: any) => ({ ...prev, [key]: val }));
+    triggerSettingsSave();
+  }
+
+  function updateContact(key: string, val: string) {
+    setContact((prev: any) => ({ ...prev, [key]: val }));
+    triggerContactSave();
+  }
+
+  if (loading) return <div className="animate-pulse h-40 bg-gray-800 rounded-xl" />;
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Settings</h2>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <ContentEditor title="Settings" subtitle="Website configuration and social links" status={settingsStatus === 'idle' ? contactStatus : settingsStatus}>
+      <div className="space-y-6">
         {/* Site Settings */}
-        <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-dark-700">
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200 dark:border-dark-700">
-            <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-500">
-              <Globe className="w-5 h-5" />
-            </div>
+        <div>
+          <div className="flex items-center gap-2.5 mb-4">
+            <Globe className="w-4 h-4 text-blue-400" />
+            <h3 className="text-sm font-semibold text-white">Site Settings</h3>
+          </div>
+          <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-4 space-y-3">
+            <InlineField value={settings.site_title || ''} onSave={v => updateSetting('site_title', v)} placeholder="Portfolio Title" label="Site Title" />
+            <InlineField value={settings.seo_description || ''} onSave={v => updateSetting('seo_description', v)} type="textarea" placeholder="Meta description for SEO" label="SEO Description" />
+            <InlineField value={settings.seo_keywords || ''} onSave={v => updateSetting('seo_keywords', v)} placeholder="keyword1, keyword2" label="SEO Keywords" />
+            <InlineField value={settings.favicon_url || ''} onSave={v => updateSetting('favicon_url', v)} type="url" placeholder="https://..." label="Favicon URL" />
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Site Settings</h3>
-              <p className="text-sm text-gray-500">Website title, SEO, and theme</p>
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5">Theme</p>
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-gray-800 border border-gray-700">
+                <Palette className="w-4 h-4 text-blue-400" />
+                <span className="text-xs text-gray-300">Dark Mode Active</span>
+                <span className="text-[10px] text-gray-500 ml-auto">Premium dark experience</span>
+              </div>
             </div>
           </div>
-
-          <form onSubmit={handleSaveSettings} className="space-y-4">
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                <Globe className="w-4 h-4" /> Site Title
-              </label>
-              <input type="text" value={settings.site_title || ''} onChange={(e) => setSettings({ ...settings, site_title: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-700 text-gray-900 dark:text-white" />
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                <Search className="w-4 h-4" /> SEO Description
-              </label>
-              <textarea value={settings.seo_description || ''} onChange={(e) => setSettings({ ...settings, seo_description: e.target.value })} className="w-full px-3 py-2 rounded-lg border" rows={2} />
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                <Search className="w-4 h-4" /> SEO Keywords
-              </label>
-              <input type="text" value={settings.seo_keywords || ''} onChange={(e) => setSettings({ ...settings, seo_keywords: e.target.value })} className="w-full px-3 py-2 rounded-lg border" placeholder="biomedical, portfolio, resume" />
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                <Palette className="w-4 h-4" /> Theme
-              </label>
-              <select value={settings.theme || 'light'} onChange={(e) => setSettings({ ...settings, theme: e.target.value })} className="w-full px-3 py-2 rounded-lg border">
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-              </select>
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Favicon URL
-              </label>
-              <input type="url" value={settings.favicon_url || ''} onChange={(e) => setSettings({ ...settings, favicon_url: e.target.value })} className="w-full px-3 py-2 rounded-lg border" placeholder="https://..." />
-            </div>
-            <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-dark-700">
-              <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors disabled:opacity-50">
-                <Save className="w-4 h-4" /> {saving ? 'Saving...' : saveMsg || 'Save Settings'}
-              </button>
-            </div>
-          </form>
         </div>
 
-        {/* Contact Info */}
-        <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-dark-700">
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200 dark:border-dark-700">
-            <div className="w-10 h-10 rounded-xl bg-success-100 dark:bg-success-900/30 flex items-center justify-center text-success-500">
-              <Mail className="w-5 h-5" />
+        {/* Contact Settings */}
+        <div>
+          <div className="flex items-center gap-2.5 mb-4">
+            <Mail className="w-4 h-4 text-blue-400" />
+            <h3 className="text-sm font-semibold text-white">Social Links</h3>
+          </div>
+          <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-4 space-y-3">
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <Mail className="w-3.5 h-3.5" />
+              <InlineField value={contact.email || ''} onSave={v => updateContact('email', v)} type="email" placeholder="email@example.com" className="flex-1" />
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Contact Settings</h3>
-              <p className="text-sm text-gray-500">Social links and contact details</p>
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <Github className="w-3.5 h-3.5" />
+              <InlineField value={contact.github || ''} onSave={v => updateContact('github', v)} type="url" placeholder="https://github.com/..." className="flex-1" />
+            </div>
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <Linkedin className="w-3.5 h-3.5" />
+              <InlineField value={contact.linkedin || ''} onSave={v => updateContact('linkedin', v)} type="url" placeholder="https://linkedin.com/in/..." className="flex-1" />
+            </div>
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <LinkIcon className="w-3.5 h-3.5" />
+              <InlineField value={contact.portfolio_url || ''} onSave={v => updateContact('portfolio_url', v)} type="url" placeholder="https://..." className="flex-1" />
+            </div>
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <span>📍</span>
+              <InlineField value={contact.location || ''} onSave={v => updateContact('location', v)} placeholder="City, Country" className="flex-1" />
+            </div>
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <span>📞</span>
+              <InlineField value={contact.phone || ''} onSave={v => updateContact('phone', v)} placeholder="Phone number" className="flex-1" />
             </div>
           </div>
-
-          <form onSubmit={handleSaveContact} className="space-y-4">
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                <Mail className="w-4 h-4" /> Email
-              </label>
-              <input type="email" value={contact.email || ''} onChange={(e) => setContact({ ...contact, email: e.target.value })} className="w-full px-3 py-2 rounded-lg border" />
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                <LinkIcon className="w-4 h-4" /> GitHub URL
-              </label>
-              <input type="url" value={contact.github || ''} onChange={(e) => setContact({ ...contact, github: e.target.value })} className="w-full px-3 py-2 rounded-lg border" />
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                <LinkIcon className="w-4 h-4" /> LinkedIn URL
-              </label>
-              <input type="url" value={contact.linkedin || ''} onChange={(e) => setContact({ ...contact, linkedin: e.target.value })} className="w-full px-3 py-2 rounded-lg border" />
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Location
-              </label>
-              <input type="text" value={contact.location || ''} onChange={(e) => setContact({ ...contact, location: e.target.value })} className="w-full px-3 py-2 rounded-lg border" />
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Phone
-              </label>
-              <input type="text" value={contact.phone || ''} onChange={(e) => setContact({ ...contact, phone: e.target.value })} className="w-full px-3 py-2 rounded-lg border" />
-            </div>
-            <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-dark-700">
-              <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors disabled:opacity-50">
-                <Save className="w-4 h-4" /> {saving ? 'Saving...' : saveMsg || 'Save Contact'}
-              </button>
-            </div>
-          </form>
         </div>
       </div>
-    </div>
+    </ContentEditor>
   );
 }

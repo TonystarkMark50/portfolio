@@ -1,6 +1,7 @@
-import { useState, useEffect, FormEvent } from 'react';
-import { Plus, Trash2, Edit2, Save, X, Star, MapPin, Award, Heart, Target } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Trash2, Map, Star, MapPin, Award, Heart, Target } from 'lucide-react';
 import { getJourney, upsertJourneyEntry, deleteJourneyEntry, Journey } from '../../lib/api';
+import ContentEditor, { InlineField, InlineSelect, useAutoSave } from './ContentEditor';
 
 const iconOptions = [
   { value: 'Star', icon: Star },
@@ -10,12 +11,11 @@ const iconOptions = [
   { value: 'Target', icon: Target },
 ];
 
+const types = ['milestone', 'achievement', 'event'];
+
 export default function AdminJourney() {
   const [items, setItems] = useState<Journey[]>([]);
-  const [editing, setEditing] = useState<Partial<Journey> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saveMsg, setSaveMsg] = useState('');
 
   useEffect(() => { load(); }, []);
 
@@ -25,128 +25,93 @@ export default function AdminJourney() {
     setLoading(false);
   }
 
-  async function handleSave(e: FormEvent) {
-    e.preventDefault();
-    if (!editing) return;
-    setSaving(true);
-    const { error } = await upsertJourneyEntry(editing);
-    if (!error) { setSaveMsg('Saved!'); setTimeout(() => setSaveMsg(''), 2000); }
-    setSaving(false);
-    setEditing(null);
+  const { status } = useAutoSave(async () => {}, []);
+
+  async function updateField(id: string, key: keyof Journey, val: any) {
+    await upsertJourneyEntry({ id, [key]: val } as any);
+    setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
+  }
+
+  async function addEntry() {
+    await upsertJourneyEntry({ title: 'New Milestone', type: 'milestone', icon: 'Star', display_order: items.length } as any);
     load();
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this journey entry?')) return;
+  async function removeEntry(id: string) {
+    if (!confirm('Delete this entry?')) return;
     await deleteJourneyEntry(id);
     load();
   }
 
-  function IconComponent({ name, className }: { name: string; className?: string }) {
-    const found = iconOptions.find(o => o.value === name);
-    const Icon = found?.icon || Star;
-    return <Icon className={className || 'w-5 h-5'} />;
+  function IconPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+    return (
+      <div className="flex gap-1.5">
+        {iconOptions.map(opt => {
+          const Icon = opt.icon;
+          const isActive = value === opt.value;
+          return (
+            <button key={opt.value} onClick={() => onChange(opt.value)} className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isActive ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-gray-800 text-gray-500 border border-gray-700 hover:border-gray-600'}`}>
+              <Icon className="w-4 h-4" />
+            </button>
+          );
+        })}
+      </div>
+    );
   }
 
-  if (loading) return <div className="animate-pulse h-40 bg-gray-200 dark:bg-dark-700 rounded-2xl" />;
+  if (loading) return <div className="animate-pulse h-40 bg-gray-800 rounded-xl" />;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Journey</h2>
-          <p className="text-sm text-gray-500 mt-1">Manage your career timeline milestones</p>
-        </div>
-        <button onClick={() => setEditing({ title: '', type: 'milestone', icon: 'Star', display_order: items.length })} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors">
-          <Plus className="w-4 h-4" /> Add Milestone
+    <ContentEditor title="Journey" subtitle="Your career timeline milestones" status={status}
+      actions={
+        <button onClick={addEntry} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors">
+          <Plus className="w-3.5 h-3.5" /> Add Milestone
         </button>
-      </div>
-
-      <div className="space-y-3">
-        {items.map((item) => (
-          <div key={item.id} className="bg-white dark:bg-dark-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-dark-700">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-500">
-                  <IconComponent name={item.icon} />
+      }
+    >
+      {items.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <Map className="w-10 h-10 mx-auto mb-2 text-gray-600" />
+          <p className="text-sm">No journey entries yet</p>
+          <button onClick={addEntry} className="mt-2 text-xs text-blue-400 hover:text-blue-300">Add milestone</button>
+        </div>
+      ) : (
+        <div className="relative">
+          <div className="absolute left-[17px] top-2 bottom-2 w-px bg-gray-800" />
+          <div className="space-y-4">
+            {items.map((item, idx) => {
+              const Icon = iconOptions.find(o => o.value === item.icon)?.icon || Star;
+              return (
+                <div key={item.id} className="relative pl-10 group">
+                  <div className="absolute left-0 top-1 w-[34px] h-[34px] rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center z-10">
+                    <Icon className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-4 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <InlineField value={item.title} onSave={v => updateField(item.id, 'title', v)} placeholder="Title" className="text-sm font-medium" />
+                        <InlineField value={item.subtitle || ''} onSave={v => updateField(item.id, 'subtitle', v)} placeholder="Subtitle" className="text-xs text-gray-400" />
+                      </div>
+                      <button onClick={() => removeEntry(item.id)} className="p-1.5 rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <InlineField value={item.date || ''} onSave={v => updateField(item.id, 'date', v)} placeholder="Date" className="text-xs" />
+                      <InlineSelect value={item.type} options={types} onSave={v => updateField(item.id, 'type', v)} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5">Icon</p>
+                      <IconPicker value={item.icon} onChange={v => updateField(item.id, 'icon', v)} />
+                    </div>
+                    <InlineField value={item.description || ''} onSave={v => updateField(item.id, 'description', v)} type="textarea" placeholder="Description" label="Description" />
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{item.title}</h3>
-                  {item.subtitle && <p className="text-sm text-gray-500">{item.subtitle}</p>}
-                  {item.date && <p className="text-xs text-gray-400 mt-1">{item.date}</p>}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="px-2 py-1 rounded-full text-xs bg-gray-100 dark:bg-dark-700 text-gray-500 capitalize">{item.type}</span>
-                <button onClick={() => setEditing(item)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 text-gray-500 transition-colors"><Edit2 className="w-4 h-4" /></button>
-                <button onClick={() => handleDelete(item.id)} className="p-2 rounded-lg hover:bg-error-50 dark:hover:bg-error-900/20 text-error-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
-              </div>
-            </div>
-          </div>
-        ))}
-        {items.length === 0 && (
-          <div className="text-center py-16 bg-white dark:bg-dark-800 rounded-2xl border border-dashed border-gray-300 dark:border-dark-600">
-            <p className="text-gray-500">No journey entries yet. Click "Add Milestone" to create one.</p>
-          </div>
-        )}
-      </div>
-
-      {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-white dark:bg-dark-800 rounded-2xl shadow-xl">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-dark-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {editing.id ? 'Edit Milestone' : 'Add Milestone'}
-              </h3>
-              <button onClick={() => setEditing(null)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors"><X className="w-5 h-5" /></button>
-            </div>
-            <form onSubmit={handleSave} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
-                  <input type="text" value={editing.title || ''} onChange={(e) => setEditing({ ...editing, title: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-700 text-gray-900 dark:text-white" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subtitle</label>
-                  <input type="text" value={editing.subtitle || ''} onChange={(e) => setEditing({ ...editing, subtitle: e.target.value })} className="w-full px-3 py-2 rounded-lg border" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                  <input type="text" value={editing.date || ''} onChange={(e) => setEditing({ ...editing, date: e.target.value })} className="w-full px-3 py-2 rounded-lg border" placeholder="2025" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
-                  <select value={editing.type || 'milestone'} onChange={(e) => setEditing({ ...editing, type: e.target.value })} className="w-full px-3 py-2 rounded-lg border">
-                    <option value="milestone">Milestone</option>
-                    <option value="achievement">Achievement</option>
-                    <option value="event">Event</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Icon</label>
-                <div className="flex gap-2">
-                  {iconOptions.map((opt) => (
-                    <button key={opt.value} type="button" onClick={() => setEditing({ ...editing, icon: opt.value })} className={`w-10 h-10 rounded-lg flex items-center justify-center border-2 transition-colors ${editing.icon === opt.value ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-500' : 'border-gray-200 dark:border-dark-600 text-gray-400 hover:border-gray-300'}`}>
-                      <opt.icon className="w-5 h-5" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                <textarea value={editing.description || ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} className="w-full px-3 py-2 rounded-lg border" rows={4} />
-              </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-dark-700">
-                <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 rounded-lg border border-gray-300 dark:border-dark-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors">Cancel</button>
-                <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors disabled:opacity-50">
-                  <Save className="w-4 h-4" /> {saving ? 'Saving...' : saveMsg || 'Save'}
-                </button>
-              </div>
-            </form>
+              );
+            })}
           </div>
         </div>
       )}
-    </div>
+    </ContentEditor>
   );
 }

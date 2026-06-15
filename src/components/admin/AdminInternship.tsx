@@ -1,13 +1,13 @@
-import { useState, useEffect, FormEvent } from 'react';
-import { Plus, Trash2, Edit2, Save, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Trash2, Briefcase } from 'lucide-react';
 import { getInternships, upsertInternship, deleteInternship, Internship } from '../../lib/api';
+import ContentEditor, { InlineField, InlineTags, InlineSelect, InlineBool, useAutoSave } from './ContentEditor';
+
+const types = ['On-Site', 'Remote', 'Hybrid'];
 
 export default function AdminInternship() {
   const [items, setItems] = useState<Internship[]>([]);
-  const [editing, setEditing] = useState<Partial<Internship> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saveMsg, setSaveMsg] = useState('');
 
   useEffect(() => { load(); }, []);
 
@@ -17,136 +17,67 @@ export default function AdminInternship() {
     setLoading(false);
   }
 
-  async function handleSave(e: FormEvent) {
-    e.preventDefault();
-    if (!editing) return;
-    setSaving(true);
-    const { error } = await upsertInternship(editing);
-    if (!error) { setSaveMsg('Saved!'); setTimeout(() => setSaveMsg(''), 2000); }
-    setSaving(false);
-    setEditing(null);
+  const { status } = useAutoSave(async () => {}, []);
+
+  async function updateField(id: string, key: keyof Internship, val: any) {
+    await upsertInternship({ id, [key]: val } as any);
+    setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
+  }
+
+  async function addEntry() {
+    await upsertInternship({ organization: 'Organization', role: 'Role', display_order: items.length } as any);
     load();
   }
 
-  async function handleDelete(id: string) {
+  async function removeEntry(id: string) {
     if (!confirm('Delete this internship?')) return;
     await deleteInternship(id);
     load();
   }
 
-  if (loading) return <div className="animate-pulse h-40 bg-gray-200 dark:bg-dark-700 rounded-2xl" />;
+  if (loading) return <div className="animate-pulse h-40 bg-gray-800 rounded-xl" />;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Internships</h2>
-          <p className="text-sm text-gray-500 mt-1">Manage your internship experience</p>
-        </div>
-        <button onClick={() => setEditing({ organization: '', role: '', display_order: items.length })} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors">
-          <Plus className="w-4 h-4" /> Add Internship
+    <ContentEditor title="Internships" subtitle="Your work experience — click to edit" status={status}
+      actions={
+        <button onClick={addEntry} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors">
+          <Plus className="w-3.5 h-3.5" /> Add Internship
         </button>
-      </div>
-
-      <div className="space-y-4">
-        {items.map((item) => (
-          <div key={item.id} className="bg-white dark:bg-dark-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-dark-700">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{item.role}</h3>
-                <p className="text-sm text-gray-500">{item.organization}{item.duration ? ` — ${item.duration}` : ''}</p>
-                {item.description && item.description.length > 0 && (
-                  <p className="text-sm text-gray-400 mt-2 line-clamp-2">{item.description[0]}</p>
-                )}
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button onClick={() => setEditing(item)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 text-gray-500 transition-colors"><Edit2 className="w-4 h-4" /></button>
-                <button onClick={() => handleDelete(item.id)} className="p-2 rounded-lg hover:bg-error-50 dark:hover:bg-error-900/20 text-error-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
-              </div>
-            </div>
-          </div>
-        ))}
-        {items.length === 0 && (
-          <div className="text-center py-16 bg-white dark:bg-dark-800 rounded-2xl border border-dashed border-gray-300 dark:border-dark-600">
-            <p className="text-gray-500">No internships yet. Click "Add Internship" to create one.</p>
-          </div>
-        )}
-      </div>
-
-      {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-2xl bg-white dark:bg-dark-800 rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-dark-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {editing.id ? 'Edit Internship' : 'Add Internship'}
-              </h3>
-              <button onClick={() => setEditing(null)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors"><X className="w-5 h-5" /></button>
-            </div>
-            <form onSubmit={handleSave} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Organization</label>
-                  <input type="text" value={editing.organization || ''} onChange={(e) => setEditing({ ...editing, organization: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-700 text-gray-900 dark:text-white" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department</label>
-                  <input type="text" value={editing.department || ''} onChange={(e) => setEditing({ ...editing, department: e.target.value })} className="w-full px-3 py-2 rounded-lg border" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
-                  <input type="text" value={editing.role || ''} onChange={(e) => setEditing({ ...editing, role: e.target.value })} className="w-full px-3 py-2 rounded-lg border" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration</label>
-                  <input type="text" value={editing.duration || ''} onChange={(e) => setEditing({ ...editing, duration: e.target.value })} className="w-full px-3 py-2 rounded-lg border" placeholder="June 2025 - Aug 2025" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
-                  <input type="text" value={editing.location || ''} onChange={(e) => setEditing({ ...editing, location: e.target.value })} className="w-full px-3 py-2 rounded-lg border" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
-                  <select value={editing.type || 'On-Site'} onChange={(e) => setEditing({ ...editing, type: e.target.value })} className="w-full px-3 py-2 rounded-lg border">
-                    <option value="On-Site">On-Site</option>
-                    <option value="Remote">Remote</option>
-                    <option value="Hybrid">Hybrid</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description (one per line)</label>
-                <textarea value={(editing.description || []).join('\n')} onChange={(e) => setEditing({ ...editing, description: e.target.value.split('\n').filter(Boolean) })} className="w-full px-3 py-2 rounded-lg border" rows={3} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Responsibilities (one per line)</label>
-                <textarea value={(editing.responsibilities || []).join('\n')} onChange={(e) => setEditing({ ...editing, responsibilities: e.target.value.split('\n').filter(Boolean) })} className="w-full px-3 py-2 rounded-lg border" rows={3} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Learnings (one per line)</label>
-                <textarea value={(editing.learnings || []).join('\n')} onChange={(e) => setEditing({ ...editing, learnings: e.target.value.split('\n').filter(Boolean) })} className="w-full px-3 py-2 rounded-lg border" rows={3} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Impact (one per line)</label>
-                <textarea value={(editing.impact || []).join('\n')} onChange={(e) => setEditing({ ...editing, impact: e.target.value.split('\n').filter(Boolean) })} className="w-full px-3 py-2 rounded-lg border" rows={3} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Certificate URL</label>
-                <input type="url" value={editing.certificate_url || ''} onChange={(e) => setEditing({ ...editing, certificate_url: e.target.value })} className="w-full px-3 py-2 rounded-lg border" />
-              </div>
-              <div className="flex items-center gap-2">
-                <input type="checkbox" id="completed" checked={editing.completed ?? true} onChange={(e) => setEditing({ ...editing, completed: e.target.checked })} className="w-4 h-4 rounded border-gray-300" />
-                <label htmlFor="completed" className="text-sm text-gray-700 dark:text-gray-300">Completed</label>
-              </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-dark-700">
-                <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 rounded-lg border border-gray-300 dark:border-dark-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors">Cancel</button>
-                <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors disabled:opacity-50">
-                  <Save className="w-4 h-4" /> {saving ? 'Saving...' : saveMsg || 'Save'}
-                </button>
-              </div>
-            </form>
-          </div>
+      }
+    >
+      {items.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <Briefcase className="w-10 h-10 mx-auto mb-2 text-gray-600" />
+          <p className="text-sm">No internships yet</p>
+          <button onClick={addEntry} className="mt-2 text-xs text-blue-400 hover:text-blue-300">Add internship</button>
         </div>
-      )}
-    </div>
+      ) : items.map(item => (
+        <div key={item.id} className="bg-gray-800/50 rounded-xl border border-gray-700 p-4 space-y-3 group">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <InlineField value={item.role} onSave={v => updateField(item.id, 'role', v)} placeholder="Role" className="text-sm font-medium" />
+              <InlineField value={item.organization} onSave={v => updateField(item.id, 'organization', v)} placeholder="Organization" className="text-xs text-gray-400" />
+            </div>
+            <button onClick={() => removeEntry(item.id)} className="p-1.5 rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <InlineField value={item.department || ''} onSave={v => updateField(item.id, 'department', v)} placeholder="Department" label="Department" />
+            <InlineField value={item.duration || ''} onSave={v => updateField(item.id, 'duration', v)} placeholder="June 2025 - Aug 2025" label="Duration" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <InlineField value={item.location || ''} onSave={v => updateField(item.id, 'location', v)} placeholder="Location" label="Location" />
+            <InlineSelect value={item.type || 'On-Site'} options={types} onSave={v => updateField(item.id, 'type', v)} label="Type" />
+          </div>
+          <InlineTags tags={item.description || []} onSave={v => updateField(item.id, 'description', v)} label="Description" />
+          <InlineTags tags={item.responsibilities || []} onSave={v => updateField(item.id, 'responsibilities', v)} label="Responsibilities" />
+          <InlineTags tags={item.learnings || []} onSave={v => updateField(item.id, 'learnings', v)} label="Key Learnings" />
+          <InlineTags tags={item.impact || []} onSave={v => updateField(item.id, 'impact', v)} label="Impact" />
+          <InlineField value={item.certificate_url || ''} onSave={v => updateField(item.id, 'certificate_url', v)} type="url" placeholder="https://..." label="Certificate URL" />
+          <InlineBool value={item.completed} onSave={v => updateField(item.id, 'completed', v)} label="Completed" />
+        </div>
+      ))}
+    </ContentEditor>
   );
 }
