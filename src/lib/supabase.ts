@@ -9,29 +9,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Direct notification insert
-async function insertNotification(notification: {
-  type: string;
-  title: string;
-  message: string;
-  metadata?: Record<string, unknown>;
-}): Promise<boolean> {
-  console.log('[Notification] Creating:', notification.title);
-  const { error } = await supabase.from('notifications').insert({
-    type: notification.type,
-    title: notification.title,
-    message: notification.message,
-    metadata: notification.metadata || null,
-    is_read: false,
-  });
-  if (error) {
-    console.error('[Notification] INSERT ERROR:', error);
-    return false;
-  }
-  console.log('[Notification] Created successfully');
-  return true;
-}
-
 // Contact functions
 export async function submitContactForm(formData: {
   name: string;
@@ -47,14 +24,9 @@ export async function submitContactForm(formData: {
       sender_ip = data.ip;
     } catch { void sender_ip; }
 
-    // Generate ID client-side so we have it for the notification
-    const submissionId = crypto.randomUUID();
-
-    // Only insert columns guaranteed to exist (is_read has DEFAULT false)
     const { error: dbError } = await supabase
       .from('contact_submissions')
       .insert({
-        id: submissionId,
         name: formData.name,
         email: formData.email,
         subject: formData.subject,
@@ -63,23 +35,6 @@ export async function submitContactForm(formData: {
       });
 
     if (dbError) throw dbError;
-
-    const notifOk = await insertNotification({
-      type: 'contact',
-      title: 'New Contact Message',
-      message: `${formData.name} contacted you regarding "${formData.subject}"`,
-      metadata: {
-        name: formData.name,
-        email: formData.email,
-        subject: formData.subject,
-        contact_submission_id: submissionId,
-      },
-    });
-
-    if (!notifOk) {
-      console.warn('[Contact] Notification insert failed (contact saved)');
-    }
-
     return { success: true };
   } catch (error) {
     console.error('Error submitting contact form:', error);

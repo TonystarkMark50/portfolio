@@ -388,3 +388,51 @@ export async function deleteAllNotifications(): Promise<{ error: PostgrestError 
     .neq('id', '00000000-0000-0000-0000-000000000000');
   return { error };
 }
+
+// ============================================================
+// Fallback: sync missing notifications from contact_submissions
+// ============================================================
+
+export async function syncMissingNotifications(): Promise<number> {
+  const { data: submissions } = await supabase
+    .from('contact_submissions')
+    .select('id, name, email, subject, is_read, created_at')
+    .order('created_at', { ascending: false });
+
+  if (!submissions) return 0;
+
+  const { data: existing } = await supabase
+    .from('notifications')
+    .select('metadata')
+    .eq('type', 'contact');
+
+  const existingIds = new Set<string>();
+  if (existing) {
+    for (const n of existing) {
+      const meta = n.metadata as Record<string, unknown> | null;
+      if (meta?.contact_submission_id) {
+        existingIds.add(meta.contact_submission_id as string);
+      }
+    }
+  }
+
+  let synced = 0;
+  for (const sub of submissions) {
+    if (!existingIds.has(sub.id)) {
+      const { error } = await supabase.from('notifications').insert({
+        type: 'contact',
+        title: 'New Contact Message',
+        message: `${sub.name} sent a message`,
+        metadata: {
+          name: sub.name,
+          email: sub.email,
+          subject: sub.subject,
+          contact_submission_id: sub.id,
+        },
+        is_read: sub.is_read || false,
+      });
+      if (!error) synced++;
+    }
+  }
+  return synced;
+}

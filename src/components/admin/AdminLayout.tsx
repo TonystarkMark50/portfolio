@@ -11,6 +11,7 @@ import {
   getNotifications, getUnreadNotificationCount,
   markNotificationRead, markAllNotificationsRead,
   deleteNotificationById, deleteAllNotifications,
+  syncMissingNotifications,
   type Notification,
 } from '../../lib/api';
 import CommandPalette from './CommandPalette';
@@ -102,6 +103,16 @@ export default function AdminLayout({
     ]);
     if (notifRes.data) setNotifications(notifRes.data);
     setUnreadCount(unreadRes);
+    // Sync: generate missing notifications from existing contact_submissions
+    const synced = await syncMissingNotifications();
+    if (synced > 0) {
+      const [refreshed, unread] = await Promise.all([
+        getNotifications(30),
+        getUnreadNotificationCount(),
+      ]);
+      if (refreshed.data) setNotifications(refreshed.data);
+      setUnreadCount(unread);
+    }
   }, []);
 
   useEffect(() => {

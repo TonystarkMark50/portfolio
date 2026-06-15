@@ -102,16 +102,7 @@ export async function trackResumeDownload(): Promise<void> {
       user_agent: navigator.userAgent,
       referrer: document.referrer || 'direct',
     });
-
-    // Create notification
-    const { error: notifError } = await supabase.from('notifications').insert({
-      type: 'download',
-      title: 'Resume Downloaded',
-      message: `A visitor from ${geo.city}, ${geo.country} downloaded your resume`,
-      metadata: { device_type: deviceType, country: geo.country, city: geo.city },
-      is_read: false,
-    });
-    if (notifError) console.error('[Analytics] Failed to create download notification:', notifError);
+    // Notification is created automatically via DB trigger
   } catch (err) {
     console.error('trackResumeDownload error:', err);
   }
