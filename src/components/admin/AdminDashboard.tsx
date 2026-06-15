@@ -96,7 +96,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
         supabase.from('contact_submissions').select('*', { count: 'exact', head: true }).eq('is_read', false),
         supabase.from('site_settings').select('*').limit(1).maybeSingle(),
       ]);
-      setProfile(pRes.data);
+      setProfile(pRes.data ? { ...pRes.data, avatar_url: (pRes.data as any).avatar_url || (pRes.data as any).profile_photo_url || null } : null);
       setProjects(projRes.data || []);
       setCertifications(certRes.data || []);
       setEducation(eduRes.data || []);

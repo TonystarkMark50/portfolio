@@ -28,7 +28,7 @@ export default function AdminProfile() {
   const { addToast } = useToast();
 
   useEffect(() => {
-    getProfile().then(({ data }) => { if (data) setProfile(data); setLoading(false); });
+    getProfile().then(({ data }) => { if (data) setProfile({ ...data, avatar_url: (data as any).avatar_url || (data as any).profile_photo_url || null }); setLoading(false); });
   }, []);
 
   const save = async () => {
@@ -84,7 +84,8 @@ export default function AdminProfile() {
       const { error: dbError } = await upsertProfile({
         ...profile,
         avatar_url: cacheBustUrl,
-      });
+        profile_photo_url: cacheBustUrl,
+      } as any);
 
       if (dbError) {
         console.error('Database save error:', dbError);
