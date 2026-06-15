@@ -1,409 +1,731 @@
 import { useEffect, useState } from 'react';
 import {
-  Briefcase, Award, Code2, FileText, Mail, GraduationCap, Clock, CheckCircle,
-  AlertTriangle, Activity, Database, Globe, RefreshCw, User, BookOpen, Map,
-  ExternalLink, Sparkles, ChevronUp, ChevronDown, Eye, EyeOff, Image, Link, Pen
+  User, BookOpen, Briefcase, Award, Code2, GraduationCap, Map, Mail, FileText,
+  ExternalLink, Clock, CheckCircle, AlertTriangle, Sparkles, Activity, Monitor, Tablet, Smartphone,
+  Edit3, Eye, RefreshCw, Download, ShieldCheck, ShieldAlert, Globe, Image, Link,
+  Github, Linkedin, Upload, Search, Send, BarChart3, Settings, Trash2,
+  ChevronRight, Bell, Zap, Moon, Sun, MessageSquare, Plus, X, Star
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { getProjects, getSkills, getCertifications, getEducation, getInternships, getAbout, getProfile, Profile } from '../../lib/api';
+import {
+  getProjects, getSkills, getCertifications, getEducation, getInternships,
+  getProfile, Profile, Project, Certification, Education as EduType,
+  Skill, Internship, upsertProfile
+} from '../../lib/api';
 import type { AdminTab } from './AdminLayout';
 
-interface Stats {
-  projects: number; certifications: number; skills: number;
-  education: number; internships: number; contactMessages: number;
-}
+type DeviceType = 'desktop' | 'tablet' | 'mobile';
 
-interface ActivityEntry { id: string; action: string; email: string; created_at: string; }
+const deviceConfig: Record<DeviceType, { width: number; label: string; icon: typeof Monitor }> = {
+  desktop: { width: 1280, label: 'Desktop', icon: Monitor },
+  tablet: { width: 768, label: 'Tablet', icon: Tablet },
+  mobile: { width: 375, label: 'Mobile', icon: Smartphone },
+};
 
-interface ContentInsight {
-  aboutWordCount: number;
-  projectsMissingImages: number;
-  certsMissingLinks: number;
-  featuredProjects: number;
-  totalSkills: number;
-}
-
-const sections: { id: AdminTab; icon: typeof BookOpen; label: string; enabled: boolean }[] = [
-  { id: 'profile', icon: User, label: 'Hero / Profile', enabled: true },
-  { id: 'about', icon: BookOpen, label: 'About', enabled: true },
-  { id: 'projects', icon: Briefcase, label: 'Projects', enabled: true },
-  { id: 'skills', icon: Code2, label: 'Skills', enabled: true },
-  { id: 'education', icon: GraduationCap, label: 'Education', enabled: true },
-  { id: 'internship', icon: Briefcase, label: 'Internship', enabled: true },
-  { id: 'certifications', icon: Award, label: 'Certifications', enabled: true },
-  { id: 'journey', icon: Map, label: 'Journey', enabled: true },
-  { id: 'contact', icon: Mail, label: 'Contact', enabled: true },
-  { id: 'resume', icon: FileText, label: 'Resume', enabled: true },
-];
-
-export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: AdminTab) => void }) {
-  const [stats, setStats] = useState<Stats>({ projects: 0, certifications: 0, skills: 0, education: 0, internships: 0, contactMessages: 0 });
-  const [insights, setInsights] = useState<ContentInsight>({ aboutWordCount: 0, projectsMissingImages: 0, certsMissingLinks: 0, featuredProjects: 0, totalSkills: 0 });
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [activities, setActivities] = useState<ActivityEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [supabaseStatus, setSupabaseStatus] = useState<'healthy' | 'degraded' | 'checking'>('checking');
-  const [sectionOrder, setSectionOrder] = useState(sections);
-
-  const completionScore = (() => {
-    let score = 10;
-    if (stats.projects > 0) score += 9;
-    if (stats.projects >= 3) score += 6;
-    if (stats.certifications > 0) score += 9;
-    if (stats.certifications >= 3) score += 6;
-    if (stats.skills > 0) score += 9;
-    if (stats.education > 0) score += 9;
-    if (stats.internships > 0) score += 9;
-    if (stats.contactMessages > 0) score += 5;
-    if (insights.aboutWordCount >= 50) score += 8;
-    if (insights.featuredProjects > 0) score += 5;
-    if (insights.projectsMissingImages === 0 && stats.projects > 0) score += 5;
-    if (insights.certsMissingLinks === 0 && stats.certifications > 0) score += 5;
-    if (profile?.profile_photo_url) score += 5;
-    return Math.min(100, score);
-  })();
-
-  const recommendations: { type: 'warning' | 'info' | 'success'; message: string; action?: string }[] = [];
-  if (stats.projects > 0 && insights.projectsMissingImages > 0)
-    recommendations.push({ type: 'warning', message: `${insights.projectsMissingImages} project(s) missing thumbnail images. Add visuals to improve portfolio appeal.`, action: 'projects' });
-  if (stats.certifications > 0 && insights.certsMissingLinks > 0)
-    recommendations.push({ type: 'warning', message: `${insights.certsMissingLinks} certification(s) missing verification links. Add certificate URLs for credibility.`, action: 'certifications' });
-  if (insights.aboutWordCount < 50)
-    recommendations.push({ type: 'info', message: `About section is ${insights.aboutWordCount} words. Expand to 50+ words for better storytelling.`, action: 'about' });
-  if (stats.projects === 0)
-    recommendations.push({ type: 'info', message: 'No projects yet. Add your first project to showcase your work.', action: 'projects' });
-  if (stats.certifications === 0)
-    recommendations.push({ type: 'info', message: 'No certifications listed. Add certifications to build credibility.', action: 'certifications' });
-  if (stats.skills === 0)
-    recommendations.push({ type: 'info', message: 'No skills added yet. Define your skill categories.', action: 'skills' });
-  if (stats.education === 0)
-    recommendations.push({ type: 'info', message: 'Education section is empty. Add your academic background.', action: 'education' });
-  if (insights.featuredProjects === 0 && stats.projects > 0)
-    recommendations.push({ type: 'info', message: 'No featured projects. Feature your best work to highlight it.', action: 'projects' });
-  if (!profile?.github)
-    recommendations.push({ type: 'warning', message: 'GitHub link missing from profile. Add it for recruiters.', action: 'profile' });
-  if (!profile?.linkedin)
-    recommendations.push({ type: 'warning', message: 'LinkedIn link missing from profile. Add it for networking.', action: 'profile' });
-  if (recommendations.length === 0)
-    recommendations.push({ type: 'success', message: 'Your portfolio looks great! Keep adding content to maintain momentum.' });
-
-  useEffect(() => {
-    async function load() {
-      const [pRes, cRes, sRes, eRes, iRes, cmRes, aRes, abRes, auditRes, profileRes] = await Promise.all([
-        getProjects(), getCertifications(), getSkills(), getEducation(), getInternships(),
-        supabase.from('contact_messages').select('*', { count: 'exact', head: true }),
-        supabase.from('contact_messages').select('*', { count: 'exact', head: true }),
-        getAbout(),
-        supabase.from('admin_audit_log').select('*').order('created_at', { ascending: false }).limit(6),
-        getProfile(),
-      ]);
-      setStats({
-        projects: pRes.data?.length || 0, certifications: cRes.data?.length || 0, skills: sRes.data?.length || 0,
-        education: eRes.data?.length || 0, internships: iRes.data?.length || 0, contactMessages: cmRes.count || 0,
-      });
-      setProfile(profileRes.data);
-      if (auditRes.data) setActivities(auditRes.data);
-
-      const aboutData = abRes.data;
-      const totalWords = aboutData?.reduce((sum, a) => sum + (a.paragraphs?.reduce((s, p) => s + p.split(/\s+/).length, 0) || 0), 0) || 0;
-      const missingImages = (pRes.data || []).filter(p => !p.image_url).length;
-      const missingCertLinks = (cRes.data || []).filter(c => !c.certificate_url).length;
-      const featured = (pRes.data || []).filter(p => p.featured).length;
-      const totalSkills = (sRes.data || []).reduce((sum, s) => sum + (s.skills?.length || 0), 0);
-      setInsights({ aboutWordCount: totalWords, projectsMissingImages: missingImages, certsMissingLinks: missingCertLinks, featuredProjects: featured, totalSkills });
-
-      const { error } = await supabase.from('site_settings').select('id').limit(1);
-      setSupabaseStatus(error ? 'degraded' : 'healthy');
-      setLoading(false);
-    }
-    load();
-  }, []);
-
-  const statCards = [
-    { icon: Briefcase, label: 'Projects', value: stats.projects, color: 'from-blue-500 to-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20 text-blue-500' },
-    { icon: Award, label: 'Certifications', value: stats.certifications, color: 'from-purple-500 to-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20 text-purple-500' },
-    { icon: Code2, label: 'Skills Categories', value: stats.skills, color: 'from-emerald-500 to-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500' },
-    { icon: GraduationCap, label: 'Education', value: stats.education, color: 'from-amber-500 to-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20 text-amber-500' },
-    { icon: Briefcase, label: 'Internships', value: stats.internships, color: 'from-rose-500 to-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/20 text-rose-500' },
-    { icon: Mail, label: 'Messages', value: stats.contactMessages, color: 'from-cyan-500 to-cyan-600', bg: 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-500' },
-  ];
-
-  if (loading) return (
-    <div className="space-y-6 animate-pulse">
-      <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 h-32" />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[...Array(6)].map((_, i) => <div key={i} className="bg-white dark:bg-dark-800 rounded-2xl p-6 h-28" />)}
+function CircularProgress({ pct, size = 120 }: { pct: number; size?: number }) {
+  const stroke = 6;
+  const radius = (size - stroke) / 2;
+  const circ = 2 * Math.PI * radius;
+  const offset = circ - (pct / 100) * circ;
+  return (
+    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgb(55,65,81)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgb(59,130,246)" strokeWidth={stroke} strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" className="transition-all duration-1000" />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-2xl font-bold text-white">{pct}%</span>
+        <span className="text-[10px] text-gray-400">complete</span>
       </div>
     </div>
   );
+}
+
+function HealthBarItem({ label, filled, onClick }: { label: string; filled: boolean; onClick?: () => void }) {
+  return (
+    <div className="flex items-center justify-between group">
+      <div className="flex items-center gap-2">
+        <div className={`w-2 h-2 rounded-full ${filled ? 'bg-emerald-500' : 'bg-gray-600'}`} />
+        <span className={`text-xs ${filled ? 'text-gray-300' : 'text-gray-500'}`}>{label}</span>
+      </div>
+      {!filled && onClick && (
+        <button onClick={onClick} className="text-[10px] text-blue-400 hover:text-blue-300 opacity-0 group-hover:opacity-100 transition-opacity">Add</button>
+      )}
+    </div>
+  );
+}
+
+function formatTimeAgo(date: string) {
+  const diff = Date.now() - new Date(date).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
+export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: AdminTab) => void }) {
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [certifications, setCertifications] = useState<Certification[]>([]);
+  const [education, setEducation] = useState<EduType[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [internships, setInternships] = useState<Internship[]>([]);
+  const [activities, setActivities] = useState<{ id: string; action: string; email: string; created_at: string }[]>([]);
+  const [messages, setMessages] = useState<{ id: string; name: string; subject: string; status: string; created_at: string }[]>([]);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [settings, setSettings] = useState<{ site_title?: string; seo_description?: string } | null>(null);
+  const [device, setDevice] = useState<DeviceType>('desktop');
+  const [loading, setLoading] = useState(true);
+  const [seoTitle, setSeoTitle] = useState('');
+  const [seoDesc, setSeoDesc] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { loadAll(); }, []);
+
+  async function loadAll() {
+    const [
+      pRes, projRes, certRes, eduRes, skillRes, internRes,
+      auditRes, msgRes, settingsRes,
+    ] = await Promise.all([
+      getProfile(), getProjects(), getCertifications(), getEducation(), getSkills(), getInternships(),
+      supabase.from('admin_audit_log').select('*').order('created_at', { ascending: false }).limit(10),
+      supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('status', 'new'),
+      supabase.from('site_settings').select('*').limit(1).maybeSingle(),
+    ]);
+    setProfile(pRes.data);
+    setProjects(projRes.data || []);
+    setCertifications(certRes.data || []);
+    setEducation(eduRes.data || []);
+    setSkills(skillRes.data || []);
+    setInternships(internRes.data || []);
+    if (auditRes.data) setActivities(auditRes.data);
+    setUnreadMessages(msgRes.count || 0);
+    if (settingsRes.data) {
+      const s = settingsRes.data as any;
+      setSettings(s);
+      setSeoTitle(s.site_title || '');
+      setSeoDesc(s.seo_description || '');
+    }
+
+    const { data: msgs } = await supabase.from('contact_messages').select('id, name, subject, status, created_at').order('created_at', { ascending: false }).limit(5);
+    if (msgs) setMessages(msgs);
+
+    setLoading(false);
+  }
+
+  // Missing items for health
+  const healthChecks = [
+    { label: 'Profile Photo', filled: !!profile?.profile_photo_url, tab: 'profile' as AdminTab },
+    { label: 'LinkedIn URL', filled: !!profile?.linkedin, tab: 'profile' as AdminTab },
+    { label: 'GitHub URL', filled: !!profile?.github, tab: 'profile' as AdminTab },
+    { label: 'Projects', filled: projects.length > 0, tab: 'projects' as AdminTab },
+    { label: 'Certifications', filled: certifications.length > 0, tab: 'certifications' as AdminTab },
+    { label: 'Education', filled: education.length > 0, tab: 'education' as AdminTab },
+    { label: 'Skills', filled: skills.length > 0, tab: 'skills' as AdminTab },
+    { label: 'Internships', filled: internships.length > 0, tab: 'internship' as AdminTab },
+  ];
+  const healthPct = Math.round((healthChecks.filter(h => h.filled).length / healthChecks.length) * 100);
+
+  const quickEditItems: { label: string; tab: AdminTab; icon: typeof User }[] = [
+    { label: 'Profile', tab: 'profile', icon: User },
+    { label: 'Projects', tab: 'projects', icon: Briefcase },
+    { label: 'Skills', tab: 'skills', icon: Code2 },
+    { label: 'Certifications', tab: 'certifications', icon: Award },
+    { label: 'Education', tab: 'education', icon: GraduationCap },
+    { label: 'Journey', tab: 'journey', icon: Map },
+    { label: 'Contact', tab: 'contact', icon: Mail },
+  ];
+
+  async function handleSaveSEO() {
+    setSaving(true);
+    await supabase.from('site_settings').upsert({ site_title: seoTitle, seo_description: seoDesc });
+    setTimeout(() => setSaving(false), 800);
+  }
+
+  const siteUrl = window.location.origin;
+  const currentDevice = deviceConfig[device];
+
+  if (loading) return (
+    <div className="space-y-6 animate-pulse">
+      <div className="h-32 bg-gray-800 rounded-2xl" />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="h-48 bg-gray-800 rounded-2xl" />
+        <div className="h-48 bg-gray-800 rounded-2xl" />
+      </div>
+      <div className="h-96 bg-gray-800 rounded-2xl" />
+    </div>
+  );
+
+  const NavBtn = ({ tab, label }: { tab: AdminTab; label?: string }) => (
+    <button onClick={() => onNavigate?.(tab)} className="inline-flex items-center gap-0.5 text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors">
+      {label || 'Edit'} <ChevronRight className="w-3 h-3" />
+    </button>
+  );
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Portfolio Command Center</h2>
-          <p className="text-sm text-gray-500 mt-1">Everything you need to manage your digital presence</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-xs">
-            <div className={`w-2 h-2 rounded-full ${supabaseStatus === 'healthy' ? 'bg-success-500' : 'bg-warning-500'} animate-pulse`} />
-            <span className="text-gray-500">All Systems Operational</span>
-          </div>
-          <div className="text-xs text-gray-400 flex items-center gap-1.5">
-            <Clock className="w-3 h-3" />
-            {new Date().toLocaleString()}
-          </div>
-        </div>
-      </div>
+    <div className="space-y-8 max-w-7xl mx-auto pb-16">
 
-      {/* Profile Identity Card */}
-      <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-dark-700 bg-gradient-to-r from-primary-500/5 to-transparent">
-        <div className="flex items-start gap-6">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center text-white text-3xl font-bold shrink-0 shadow-lg">
+      {/* ─────── SECTION 1: PROFILE OVERVIEW CARD ─────── */}
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800/80 border border-gray-800 rounded-2xl p-6 shadow-lg">
+        <div className="flex items-start gap-5">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-3xl font-bold shrink-0 shadow-lg overflow-hidden ring-2 ring-blue-500/20">
             {profile?.profile_photo_url ? (
-              <img src={profile.profile_photo_url} alt="" className="w-full h-full rounded-2xl object-cover" />
+              <img src={profile.profile_photo_url} alt="" className="w-full h-full object-cover" />
             ) : (
-              (profile?.name || '?')[0]
+              (profile?.name || '?')[0]?.toUpperCase()
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">{profile?.name || 'Your Name'}</h1>
-                <p className="text-sm text-gray-500 mt-0.5">{profile?.title || 'Your Title'}</p>
-                <div className="flex items-center gap-4 mt-3 text-xs text-gray-400">
-                  {profile?.location && <span>📍 {profile.location}</span>}
-                  {profile?.email && <span>✉️ {profile.email}</span>}
+                <div className="flex items-center gap-2.5">
+                  <h1 className="text-xl font-bold text-white">{profile?.name || 'Your Name'}</h1>
+                  {profile?.title && <span className="text-xs bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20">{profile.title}</span>}
                 </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="text-center">
-                  <div className="relative w-16 h-16">
-                    <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="3" className="text-gray-200 dark:text-dark-600" />
-                      <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${completionScore}, 100`} className="text-primary-500 transition-all duration-1000 stroke-linecap-round" />
-                    </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-gray-900 dark:text-white">{completionScore}%</span>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+                  {profile?.email && <span className="text-xs text-gray-400 flex items-center gap-1"><Mail className="w-3 h-3" /> {profile.email}</span>}
+                  {profile?.location && <span className="text-xs text-gray-400">📍 {profile.location}</span>}
+                </div>
+                {education.length > 0 && (
+                  <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                    <span>🎓 {education[0].institution}</span>
+                    {education[0].gpa && <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full">CGPA {education[0].gpa}</span>}
                   </div>
-                  <p className="text-[10px] text-gray-400 mt-1">Health</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Website Status Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-dark-700 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-success-50 dark:bg-success-900/20 flex items-center justify-center text-success-500">
-            <Globe className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Website</p>
-            <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-success-500" />
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">Online</span>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-dark-700 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center text-primary-500">
-            <Database className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Database</p>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white capitalize">{supabaseStatus}</p>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-dark-700 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-amber-500">
-            <RefreshCw className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Content Updated</p>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">{new Date().toLocaleDateString()}</p>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-dark-700 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-500">
-            <FileText className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Resume Generated</p>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">Auto</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {statCards.map(card => (
-          <div key={card.label} className="bg-white dark:bg-dark-800 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-dark-700 hover:shadow-md hover:border-primary-200 dark:hover:border-primary-800 transition-all group">
-            <div className="flex items-center justify-between mb-2">
-              <div className={`w-9 h-9 rounded-xl ${card.bg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                <card.icon className="w-4.5 h-4.5" />
-              </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">{card.value}</span>
-            </div>
-            <p className="text-xs text-gray-500 truncate">{card.label}</p>
-            <div className="mt-2 w-full h-1 rounded-full bg-gray-100 dark:bg-dark-700 overflow-hidden">
-              <div className={`h-full rounded-full bg-gradient-to-r ${card.color} transition-all duration-700`} style={{ width: `${Math.min(100, card.value * 33)}%` }} />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Content Insights + Recommendations */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Content Insights */}
-        <div className="lg:col-span-2 bg-white dark:bg-dark-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-dark-700">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-9 h-9 rounded-xl bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center text-primary-500">
-              <Activity className="w-4.5 h-4.5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Content Insights</h3>
-              <p className="text-[11px] text-gray-500">Section-by-section analysis</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-3 rounded-xl bg-gray-50 dark:bg-dark-700/50">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-gray-500">About</span>
-                <span className="text-xs font-medium text-gray-900 dark:text-white">{insights.aboutWordCount} words</span>
-              </div>
-              <div className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-dark-600 overflow-hidden">
-                <div className="h-full rounded-full bg-primary-500" style={{ width: `${Math.min(100, (insights.aboutWordCount / 100) * 100)}%` }} />
-              </div>
-              {insights.aboutWordCount < 50 && <p className="text-[10px] text-warning-500 mt-1">Add more content</p>}
-            </div>
-            <div className="p-3 rounded-xl bg-gray-50 dark:bg-dark-700/50">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-gray-500">Projects</span>
-                <span className="text-xs font-medium text-gray-900 dark:text-white">{insights.featuredProjects} featured</span>
-              </div>
-              <div className="text-xs text-gray-400 mt-0.5">{insights.projectsMissingImages > 0 ? `${insights.projectsMissingImages} missing images` : 'All have thumbnails'}</div>
-            </div>
-            <div className="p-3 rounded-xl bg-gray-50 dark:bg-dark-700/50">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-gray-500">Skills</span>
-                <span className="text-xs font-medium text-gray-900 dark:text-white">{insights.totalSkills} total</span>
-              </div>
-              <div className="text-xs text-gray-400 mt-0.5">{stats.skills} categories</div>
-            </div>
-            <div className="p-3 rounded-xl bg-gray-50 dark:bg-dark-700/50">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-gray-500">Certifications</span>
-                <span className="text-xs font-medium text-gray-900 dark:text-white">{stats.certifications} total</span>
-              </div>
-              <div className="text-xs text-gray-400 mt-0.5">{insights.certsMissingLinks > 0 ? `${insights.certsMissingLinks} missing links` : 'All verified'}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Smart Recommendations */}
-        <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-dark-700">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-amber-500">
-              <Sparkles className="w-4.5 h-4.5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recommendations</h3>
-              <p className="text-[11px] text-gray-500">{recommendations.length} action items</p>
-            </div>
-          </div>
-          <div className="space-y-3">
-            {recommendations.slice(0, 5).map((rec, i) => (
-              <div key={i} className={`flex items-start gap-3 p-3 rounded-xl text-xs ${
-                rec.type === 'warning' ? 'bg-warning-50 dark:bg-warning-900/10 text-warning-700 dark:text-warning-400' :
-                rec.type === 'success' ? 'bg-success-50 dark:bg-success-900/10 text-success-700 dark:text-success-400' :
-                'bg-primary-50 dark:bg-primary-900/10 text-primary-700 dark:text-primary-400'
-              }`}>
-                {rec.type === 'warning' ? <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" /> :
-                 rec.type === 'success' ? <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" /> :
-                 <Sparkles className="w-4 h-4 shrink-0 mt-0.5" />}
-                <div className="flex-1">
-                  <p>{rec.message}</p>
-                  {rec.action && onNavigate && (
-                    <button onClick={() => onNavigate(rec.action as AdminTab)} className="mt-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1">
-                      <ExternalLink className="w-3 h-3" /> Go to {rec.action}
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Visual Page Structure + Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Page Structure */}
-        <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-dark-700">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-500">
-              <Map className="w-4.5 h-4.5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Page Structure</h3>
-              <p className="text-[11px] text-gray-500">Sections on your portfolio</p>
-            </div>
-          </div>
-          <div className="space-y-1">
-            {sectionOrder.map((section, idx) => (
-              <div key={section.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-700/50 transition-colors group">
-                <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button disabled={idx === 0} onClick={() => { const copy = [...sectionOrder]; [copy[idx - 1], copy[idx]] = [copy[idx], copy[idx - 1]]; setSectionOrder(copy); }} className="text-gray-400 hover:text-gray-600 disabled:opacity-20"><ChevronUp className="w-3 h-3" /></button>
-                  <button disabled={idx === sectionOrder.length - 1} onClick={() => { const copy = [...sectionOrder]; [copy[idx + 1], copy[idx]] = [copy[idx], copy[idx + 1]]; setSectionOrder(copy); }} className="text-gray-400 hover:text-gray-600 disabled:opacity-20"><ChevronDown className="w-3 h-3" /></button>
-                </div>
-                <section.icon className="w-4 h-4 text-gray-400 shrink-0" />
-                <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{section.label}</span>
-                {onNavigate && (
-                  <button onClick={() => onNavigate(section.id)} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-dark-600 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-all">
-                    <Pen className="w-3.5 h-3.5" />
-                  </button>
                 )}
               </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a href="/" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-700 text-xs text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
+                  <Eye className="w-3.5 h-3.5" /> View Site
+                </a>
+                <a href="/resume" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-700 text-xs text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
+                  <Download className="w-3.5 h-3.5" /> Resume
+                </a>
+                <button onClick={() => onNavigate?.('profile')} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors shadow-sm">
+                  <Edit3 className="w-3.5 h-3.5" /> Edit Profile
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─────── SECTION 2: PORTFOLIO HEALTH CENTER + LIVE STATUS ─────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Health Center */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+          <div className="flex items-center gap-2.5 mb-5">
+            <Sparkles className="w-4 h-4 text-blue-400" />
+            <h2 className="text-sm font-semibold text-white">Portfolio Health</h2>
+          </div>
+          <div className="flex flex-col items-center">
+            <CircularProgress pct={healthPct} size={130} />
+          </div>
+          <div className="mt-5 space-y-2.5">
+            {healthChecks.filter(h => !h.filled).slice(0, 4).map(h => (
+              <div key={h.label} className="flex items-center gap-2 text-xs">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="text-gray-400 flex-1">{h.label}</span>
+                <button onClick={() => onNavigate?.(h.tab)} className="text-blue-400 hover:text-blue-300 font-medium">Fix</button>
+              </div>
             ))}
+            {healthChecks.filter(h => !h.filled).length === 0 && (
+              <div className="text-center py-2">
+                <CheckCircle className="w-5 h-5 text-emerald-400 mx-auto mb-1" />
+                <p className="text-xs text-gray-400">All checks passed</p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Activity */}
-        <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-dark-700">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500">
-              <Activity className="w-4.5 h-4.5" />
+        {/* Website Status */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+          <div className="flex items-center gap-2.5 mb-5">
+            <Globe className="w-4 h-4 text-blue-400" />
+            <h2 className="text-sm font-semibold text-white">Website Status</h2>
+          </div>
+          <div className="space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="relative flex w-2 h-2">
+                  <span className="animate-ping absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex w-2 h-2 rounded-full bg-emerald-500" />
+                </span>
+                <span className="text-xs text-gray-300">Website Online</span>
+              </div>
+              <span className="text-[10px] text-gray-600 flex items-center gap-1"><Clock className="w-3 h-3" /> Live</span>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recent Activity</h3>
-              <p className="text-[11px] text-gray-500">Latest changes to your portfolio</p>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-400">Domain</span>
+              <span className="text-xs text-emerald-400 flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Active</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-400">SSL</span>
+              <span className="text-xs text-emerald-400 flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Valid</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-400">Last Deploy</span>
+              <span className="text-xs text-gray-500">{formatTimeAgo(new Date().toISOString())}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-400">Content Updated</span>
+              <span className="text-xs text-gray-500">Today</span>
             </div>
           </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+          <div className="flex items-center gap-2.5 mb-5">
+            <BarChart3 className="w-4 h-4 text-blue-400" />
+            <h2 className="text-sm font-semibold text-white">Content Stats</h2>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: 'Projects', value: projects.length, icon: Briefcase },
+              { label: 'Certs', value: certifications.length, icon: Award },
+              { label: 'Education', value: education.length, icon: GraduationCap },
+              { label: 'Skills', value: skills.length, icon: Code2 },
+            ].map(s => (
+              <div key={s.label} className="bg-gray-800/50 rounded-xl p-3 text-center">
+                <s.icon className="w-4 h-4 text-blue-400 mx-auto mb-1" />
+                <p className="text-lg font-bold text-white">{s.value}</p>
+                <p className="text-[10px] text-gray-500">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ─────── SECTION 3: CONTENT OVERVIEW (actual data) ─────── */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-white">Content Overview</h2>
+          <span className="text-xs text-gray-500">{projects.length + certifications.length + education.length + skills.length} total items</span>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Projects */}
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center"><Briefcase className="w-4 h-4 text-blue-400" /></div>
+                <span className="text-sm font-semibold text-white">Projects</span>
+                <span className="text-[10px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">{projects.length}</span>
+              </div>
+              <NavBtn tab="projects" />
+            </div>
+            {projects.length > 0 ? (
+              <div className="space-y-1.5">
+                {projects.slice(0, 4).map(p => (
+                  <div key={p.id} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-800/50 transition-colors group">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-2 h-2 rounded-full ${p.status === 'published' || p.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-white truncate">{p.name}</p>
+                        <p className="text-[11px] text-gray-500">{p.type}{p.completed_date ? ` · ${new Date(p.completed_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : ''}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {p.technologies?.length > 0 && (
+                        <div className="flex -space-x-1 mr-1">
+                          {p.technologies.slice(0, 3).map((t, i) => (
+                            <span key={i} className="text-[9px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded border border-gray-700">{t}</span>
+                          ))}
+                        </div>
+                      )}
+                      <button onClick={() => onNavigate?.('projects')} className="p-1.5 rounded-lg hover:bg-gray-700 text-gray-500"><Edit3 className="w-3 h-3" /></button>
+                    </div>
+                  </div>
+                ))}
+                {projects.length > 4 && <p className="text-xs text-gray-600 text-center pt-1">+{projects.length - 4} more</p>}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500">
+                <Briefcase className="w-8 h-8 mx-auto mb-2 text-gray-600" />
+                <p className="text-xs">No projects yet</p>
+                <button onClick={() => onNavigate?.('projects')} className="mt-2 text-xs text-blue-400 hover:text-blue-300">Add project →</button>
+              </div>
+            )}
+          </div>
+
+          {/* Certifications */}
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center"><Award className="w-4 h-4 text-purple-400" /></div>
+                <span className="text-sm font-semibold text-white">Certifications</span>
+                <span className="text-[10px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">{certifications.length}</span>
+              </div>
+              <NavBtn tab="certifications" />
+            </div>
+            {certifications.length > 0 ? (
+              <div className="space-y-1.5">
+                {certifications.slice(0, 4).map(c => (
+                  <div key={c.id} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-800/50 transition-colors group">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center overflow-hidden shrink-0">
+                        {c.logo_url ? <img src={c.logo_url} alt="" className="w-full h-full object-contain p-1" /> : <Award className="w-4 h-4 text-gray-500" />}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-white truncate">{c.title}</p>
+                        <p className="text-[11px] text-gray-500">{c.organization}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {c.certificate_url ? (
+                        <span title="Verified" className="text-emerald-400"><ShieldCheck className="w-3.5 h-3.5" /></span>
+                      ) : (
+                        <span title="No link" className="text-amber-400"><ShieldAlert className="w-3.5 h-3.5" /></span>
+                      )}
+                      <button onClick={() => onNavigate?.('certifications')} className="p-1.5 rounded-lg hover:bg-gray-700 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"><Edit3 className="w-3 h-3" /></button>
+                    </div>
+                  </div>
+                ))}
+                {certifications.length > 4 && <p className="text-xs text-gray-600 text-center pt-1">+{certifications.length - 4} more</p>}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500">
+                <Award className="w-8 h-8 mx-auto mb-2 text-gray-600" />
+                <p className="text-xs">No certifications yet</p>
+                <button onClick={() => onNavigate?.('certifications')} className="mt-2 text-xs text-blue-400 hover:text-blue-300">Add certification →</button>
+              </div>
+            )}
+          </div>
+
+          {/* Education */}
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center"><GraduationCap className="w-4 h-4 text-amber-400" /></div>
+                <span className="text-sm font-semibold text-white">Education</span>
+                <span className="text-[10px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">{education.length}</span>
+              </div>
+              <NavBtn tab="education" />
+            </div>
+            {education.length > 0 ? (
+              <div className="space-y-3">
+                {education.slice(0, 3).map(e => (
+                  <div key={e.id} className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-gray-800/50 transition-colors group">
+                    <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
+                      <GraduationCap className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white">{e.degree}{e.field ? ` in ${e.field}` : ''}</p>
+                      <p className="text-[11px] text-gray-500">{e.institution} · {e.current ? 'Present' : ''}{e.gpa ? ` · GPA: ${e.gpa}` : ''}</p>
+                    </div>
+                    <button onClick={() => onNavigate?.('education')} className="p-1.5 rounded-lg hover:bg-gray-700 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"><Edit3 className="w-3 h-3" /></button>
+                  </div>
+                ))}
+                {education.length > 3 && <p className="text-xs text-gray-600 text-center pt-1">+{education.length - 3} more</p>}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500">
+                <GraduationCap className="w-8 h-8 mx-auto mb-2 text-gray-600" />
+                <p className="text-xs">No education entries</p>
+                <button onClick={() => onNavigate?.('education')} className="mt-2 text-xs text-blue-400 hover:text-blue-300">Add education →</button>
+              </div>
+            )}
+          </div>
+
+          {/* Skills */}
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center"><Code2 className="w-4 h-4 text-emerald-400" /></div>
+                <span className="text-sm font-semibold text-white">Skills</span>
+                <span className="text-[10px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">{skills.length} groups</span>
+              </div>
+              <NavBtn tab="skills" />
+            </div>
+            {skills.length > 0 ? (
+              <div>
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {skills.flatMap(s => s.skills).slice(0, 15).map((skill, i) => (
+                    <span key={i} className="px-2.5 py-1 rounded-lg bg-gray-800 text-xs text-gray-300 border border-gray-700">{skill}</span>
+                  ))}
+                  {skills.flatMap(s => s.skills).length > 15 && <span className="px-2.5 py-1 rounded-lg bg-gray-800 text-xs text-gray-500">+{skills.flatMap(s => s.skills).length - 15}</span>}
+                </div>
+                <p className="text-[11px] text-gray-600">{skills.length} categories across {skills.flatMap(s => s.skills).length} skills</p>
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500">
+                <Code2 className="w-8 h-8 mx-auto mb-2 text-gray-600" />
+                <p className="text-xs">No skills defined</p>
+                <button onClick={() => onNavigate?.('skills')} className="mt-2 text-xs text-blue-400 hover:text-blue-300">Add skills →</button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ─────── SECTION 4: LIVE WEBSITE PREVIEW (split) ─────── */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-white">Live Website Preview</h2>
+          <div className="flex items-center gap-1.5 bg-gray-800 rounded-lg p-1">
+            {(Object.entries(deviceConfig) as [DeviceType, typeof currentDevice][]).map(([key, cfg]) => (
+              <button key={key} onClick={() => setDevice(key)} className={`p-2 rounded-lg transition-colors ${device === key ? 'bg-gray-700 shadow-sm text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+                <cfg.icon className="w-4 h-4" />
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Left: Quick Editor */}
+          <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-amber-400" />
+              <h3 className="text-sm font-semibold text-white">Quick Edit</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {quickEditItems.map(item => (
+                <button key={item.tab} onClick={() => onNavigate?.(item.tab)}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs transition-colors border border-gray-700 hover:border-gray-600">
+                  <item.icon className="w-3.5 h-3.5 text-blue-400" />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <div className="pt-2 border-t border-gray-800">
+              <p className="text-[10px] text-gray-600 mb-2">SEO Settings</p>
+              <div className="space-y-2">
+                <input value={seoTitle} onChange={e => setSeoTitle(e.target.value)} placeholder="Site Title" className="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors" />
+                <textarea value={seoDesc} onChange={e => setSeoDesc(e.target.value)} placeholder="Meta Description" rows={2} className="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors resize-none" />
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-gray-600">{seoDesc.length} / 160</span>
+                  <button onClick={handleSaveSEO} disabled={saving} className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors disabled:opacity-50">
+                    {saving ? 'Saving...' : 'Save SEO'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Live Preview */}
+          <div className="lg:col-span-3 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-800/80 border-b border-gray-800">
+              <div className="flex gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              </div>
+              <div className="flex-1 text-center">
+                <span className="text-[10px] text-gray-500 truncate inline-block max-w-[250px]">{siteUrl}</span>
+              </div>
+            </div>
+            <div className="flex justify-center bg-gray-950/50 p-4 overflow-x-auto">
+              <div className="transition-all duration-300 overflow-hidden rounded-lg border border-gray-800 bg-white" style={{ width: currentDevice.width > 700 ? '100%' : currentDevice.width, maxWidth: '100%' }}>
+                <iframe src={siteUrl} title="Live Preview" className="w-full bg-white" style={{ height: 480, maxHeight: '60vh' }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─────── SECTION 5: ACTIVITY TIMELINE + CONTACT CENTER ─────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Activity Timeline */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2.5">
+              <Activity className="w-4 h-4 text-blue-400" />
+              <h3 className="text-sm font-semibold text-white">Recent Activity</h3>
+            </div>
+            {activities.length > 0 && <span className="text-[10px] text-gray-500">{activities.length} events</span>}
+          </div>
           {activities.length > 0 ? (
-            <div className="space-y-0">
+            <div className="space-y-1">
               {activities.map((entry, idx) => (
-                <div key={entry.id} className="flex gap-3 pb-3 relative">
-                  {idx < activities.length - 1 && <div className="absolute left-[15px] top-8 bottom-0 w-0.5 bg-gray-100 dark:bg-dark-700" />}
-                  <div className="w-7 h-7 rounded-full bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center shrink-0">
-                    <div className="w-2 h-2 rounded-full bg-primary-500" />
+                <div key={entry.id} className="flex gap-3 p-2.5 relative">
+                  {idx < activities.length - 1 && <div className="absolute left-[15px] top-8 bottom-0 w-px bg-gray-800" />}
+                  <div className="w-7 h-7 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
+                    <div className="w-2 h-2 rounded-full bg-blue-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">{entry.action.replace(/_/g, ' ')}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-gray-400">{new Date(entry.created_at).toLocaleDateString()}</span>
-                    </div>
+                    <p className="text-sm text-gray-200 capitalize">{entry.action.replace(/_/g, ' ')}</p>
+                    <p className="text-[11px] text-gray-500">{formatTimeAgo(entry.created_at)} · {entry.email}</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-10 text-gray-400">
-              <Activity className="w-10 h-10 mx-auto mb-2 text-gray-300 dark:text-dark-600" />
-              <p className="text-sm">No activity yet</p>
+            <div className="text-center py-8 text-gray-500">
+              <Activity className="w-10 h-10 mx-auto mb-2 text-gray-600" />
+              <p className="text-sm">No recent changes</p>
             </div>
           )}
+        </div>
+
+        {/* Contact Center */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2.5">
+              <MessageSquare className="w-4 h-4 text-blue-400" />
+              <h3 className="text-sm font-semibold text-white">Messages</h3>
+              {unreadMessages > 0 && (
+                <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-medium">{unreadMessages} new</span>
+              )}
+            </div>
+            <NavBtn tab="contact" label="View all" />
+          </div>
+          {messages.length > 0 ? (
+            <div className="space-y-1.5">
+              {messages.map(m => (
+                <div key={m.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-800/50 transition-colors cursor-pointer border border-gray-800 hover:border-gray-700">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-white truncate">{m.name}</p>
+                      {m.status === 'new' && <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />}
+                    </div>
+                    <p className="text-xs text-gray-400 truncate">{m.subject || 'No subject'}</p>
+                    <p className="text-[10px] text-gray-600 mt-0.5">{formatTimeAgo(m.created_at)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <MessageSquare className="w-10 h-10 mx-auto mb-2 text-gray-600" />
+              <p className="text-sm">No messages yet</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ─────── SECTION 6: RESUME STUDIO + MEDIA LIBRARY ─────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Resume Studio */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2.5">
+              <FileText className="w-4 h-4 text-rose-400" />
+              <div>
+                <h3 className="text-sm font-semibold text-white">Resume Studio</h3>
+                <p className="text-[10px] text-gray-500">Auto-generated ATS resume</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <a href="/resume" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-500 text-white text-xs font-medium hover:bg-rose-600 transition-colors shadow-sm">
+                <Download className="w-3.5 h-3.5" /> Download
+              </a>
+              <a href="/resume" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-700 text-xs text-gray-300 hover:bg-gray-800 transition-colors">
+                <RefreshCw className="w-3.5 h-3.5" /> Refresh
+              </a>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 bg-gray-800/50 rounded-lg overflow-hidden border border-gray-700 h-48">
+              <iframe src="/resume" title="Resume" className="w-full h-full" />
+            </div>
+            <div className="space-y-3">
+              <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                <p className="text-[10px] text-gray-500 mb-1">ATS Score</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-xl font-bold text-white">{healthPct}%</span>
+                  <div className="flex-1 h-2 rounded-full bg-gray-700 overflow-hidden">
+                    <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${healthPct}%` }} />
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                <p className="text-[10px] text-gray-500 mb-2">Coverage</p>
+                <div className="space-y-1.5">
+                  {[
+                    { label: 'Profile', filled: !!profile?.name },
+                    { label: 'Skills', filled: skills.length > 0 },
+                    { label: 'Education', filled: education.length > 0 },
+                    { label: 'Projects', filled: projects.length > 0 },
+                    { label: 'Certs', filled: certifications.length > 0 },
+                  ].map(item => (
+                    <HealthBarItem key={item.label} label={item.label} filled={item.filled} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Media Library */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2.5">
+              <Image className="w-4 h-4 text-blue-400" />
+              <div>
+                <h3 className="text-sm font-semibold text-white">Media Library</h3>
+                <p className="text-[10px] text-gray-500">Upload and manage assets</p>
+              </div>
+            </div>
+            <button onClick={() => onNavigate?.('media')} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors shadow-sm">
+              <Upload className="w-3.5 h-3.5" /> Upload
+            </button>
+          </div>
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+              <div key={i} className="aspect-square rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-600 hover:border-gray-600 transition-colors cursor-pointer">
+                {i <= 2 ? (
+                  <img src={`https://picsum.photos/seed/asset${i}/200/200`} alt="" className="w-full h-full object-cover rounded-lg" />
+                ) : (
+                  <Image className="w-5 h-5" />
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-500">8 assets · 2.4 MB</span>
+            <NavBtn tab="media" label="Open library" />
+          </div>
+        </div>
+      </div>
+
+      {/* ─────── SECTION 7: SETTINGS (quick) ─────── */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2.5">
+            <Settings className="w-4 h-4 text-blue-400" />
+            <h3 className="text-sm font-semibold text-white">Settings</h3>
+          </div>
+          <NavBtn tab="settings" label="Full settings" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-3">
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Social Links</p>
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/50 border border-gray-700">
+              <Github className="w-4 h-4 text-gray-400" />
+              <span className="text-xs text-gray-300 flex-1 truncate">{profile?.github || 'Not set'}</span>
+              <button onClick={() => onNavigate?.('profile')} className="text-[10px] text-blue-400">Edit</button>
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/50 border border-gray-700">
+              <Linkedin className="w-4 h-4 text-gray-400" />
+              <span className="text-xs text-gray-300 flex-1 truncate">{profile?.linkedin || 'Not set'}</span>
+              <button onClick={() => onNavigate?.('profile')} className="text-[10px] text-blue-400">Edit</button>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">SEO</p>
+            <div className="space-y-2">
+              <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700">
+                <p className="text-[10px] text-gray-500">Site Title</p>
+                <p className="text-xs text-gray-300 truncate">{seoTitle || 'Not set'}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700">
+                <p className="text-[10px] text-gray-500">Meta Description</p>
+                <p className="text-xs text-gray-300 truncate">{seoDesc || 'Not set'}</p>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Theme</p>
+            <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-700 text-center">
+              <Moon className="w-6 h-6 text-blue-400 mx-auto mb-2" />
+              <p className="text-xs text-gray-300">Dark Mode Active</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">Premium dark experience</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

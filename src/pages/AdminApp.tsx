@@ -16,6 +16,7 @@ import AdminContacts from '../components/admin/AdminContacts';
 import AdminResume from '../components/admin/AdminResume';
 import AdminMedia from '../components/admin/AdminMedia';
 import AdminSettings from '../components/admin/AdminSettings';
+import AnalyticsCenter from '../components/admin/AnalyticsCenter';
 
 function AdminContent() {
   const { isAuthenticated, isLoading } = useAdmin();
@@ -63,6 +64,7 @@ function AdminContent() {
       {activeTab === 'contact' && <AdminContacts />}
       {activeTab === 'resume' && <AdminResume />}
       {activeTab === 'media' && <AdminMedia />}
+      {activeTab === 'analytics' && <AnalyticsCenter />}
       {activeTab === 'settings' && <AdminSettings />}
     </AdminLayout>
   );
