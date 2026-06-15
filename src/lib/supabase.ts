@@ -45,13 +45,15 @@ export async function submitContactForm(formData: {
     const { data: insertedData, error: dbError } = await supabase
       .from('contact_submissions')
       .insert({ ...formData, sender_ip })
-      .select('id')
-      .maybeSingle();
+      .select('id');
 
     if (dbError) throw dbError;
 
-    // Create notification with contact_submission_id in metadata
-    const contactSubmissionId = insertedData?.id;
+    let contactSubmissionId: string | undefined;
+    if (insertedData && Array.isArray(insertedData) && insertedData.length > 0) {
+      contactSubmissionId = (insertedData[0] as Record<string, unknown>).id as string;
+    }
+
     insertNotification({
       type: 'contact',
       title: 'New Contact Message',
