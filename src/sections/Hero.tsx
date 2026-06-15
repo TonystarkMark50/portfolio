@@ -163,6 +163,30 @@ export default function Hero() {
 
       {/* Main content */}
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-12 sm:pb-16 lg:pb-20">
+        {/* Mobile Profile Photo - visible only on small screens */}
+        <motion.div
+          className="flex lg:hidden justify-center mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={mounted ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-2xl overflow-hidden border-[3px] border-white/30 shadow-xl">
+            {imgError || !profile?.avatar_url ? (
+              <div className="w-full h-full bg-gradient-to-br from-primary-500/30 to-accent-500/30 flex items-center justify-center">
+                <span className="text-3xl font-bold text-white/60">{profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'JT'}</span>
+              </div>
+            ) : (
+              <img
+                src={profile.avatar_url}
+                alt={profile.name || 'Profile'}
+                className="w-full h-full object-cover object-center"
+                loading="lazy"
+                onError={() => setImgError(true)}
+              />
+            )}
+          </div>
+        </motion.div>
+
         <div className="grid lg:grid-cols-5 gap-12 lg:gap-16 items-center">
           {/* ===== LEFT COLUMN (3/5 width on desktop) ===== */}
           <motion.div
