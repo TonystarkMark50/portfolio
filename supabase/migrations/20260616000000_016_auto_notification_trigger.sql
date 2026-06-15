@@ -1,6 +1,11 @@
 -- Auto-create notifications when contact_submissions or resume_downloads are inserted
 -- This runs server-side via trigger, bypassing client RLS restrictions
 
+-- 0. Ensure missing columns exist on resume_downloads (may not have been added yet)
+ALTER TABLE resume_downloads ADD COLUMN IF NOT EXISTS device_type TEXT;
+ALTER TABLE resume_downloads ADD COLUMN IF NOT EXISTS country TEXT;
+ALTER TABLE resume_downloads ADD COLUMN IF NOT EXISTS city TEXT;
+
 -- 1. Trigger for contact_submissions
 CREATE OR REPLACE FUNCTION handle_new_contact_notification()
 RETURNS TRIGGER AS $$
