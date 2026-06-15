@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Globe, Search, Palette, Link as LinkIcon, Mail, Github, Linkedin, Save } from 'lucide-react';
+import { Globe, Palette, Link as LinkIcon, Mail, Github, Linkedin } from 'lucide-react';
 import { getSiteSettings, upsertSiteSettings, getContactInfo, upsertContactInfo } from '../../lib/api';
-import ContentEditor, { InlineField, InlineSelect, useAutoSave } from './ContentEditor';
+import ContentEditor, { InlineField, useAutoSave, SaveStatus } from './ContentEditor';
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState<any>({ site_title: '', seo_description: '', seo_keywords: '', theme: 'dark', favicon_url: '' });
@@ -41,8 +41,13 @@ export default function AdminSettings() {
 
   if (loading) return <div className="animate-pulse h-40 bg-gray-800 rounded-xl" />;
 
+  const mergedStatus: SaveStatus = [settingsStatus, contactStatus].reduce((acc, s) => {
+    const order: SaveStatus[] = ['error', 'saving', 'unsaved', 'saved', 'idle'];
+    return order.indexOf(s) < order.indexOf(acc) ? s : acc;
+  }, 'idle' as SaveStatus);
+
   return (
-    <ContentEditor section="settings" title="Settings" subtitle="Website configuration and social links" status={settingsStatus === 'idle' ? contactStatus : settingsStatus}>
+    <ContentEditor section="settings" title="Settings" subtitle="Website configuration and social links" status={mergedStatus}>
       <div className="space-y-6">
         {/* Site Settings */}
         <div>

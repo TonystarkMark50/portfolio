@@ -47,18 +47,21 @@ function CertificationCard({ cert, index, isVisible }: { cert: any; index: numbe
                 <img
                   src={cert.logoUrl}
                   alt={cert.organization}
+                  loading="lazy"
                   className="w-full h-full object-contain"
                 />
               ) : cert.organization === 'University of Colorado System' ? (
                 <img
                   src="/assets/images/college.png"
                   alt="University of Colorado System"
+                  loading="lazy"
                   className="w-full h-full object-contain"
                 />
               ) : cert.platform === 'HackerRank' ? (
                 <img
                   src="/assets/images/hackerrank.png"
                   alt="HackerRank"
+                  loading="lazy"
                   className="w-full h-full object-contain"
                 />
               ) : (

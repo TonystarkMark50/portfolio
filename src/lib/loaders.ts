@@ -7,6 +7,7 @@ import {
   getEducation,
   getCertifications,
   getProjects,
+  getJourney,
   getContactInfo,
 } from './api';
 
@@ -243,10 +244,9 @@ export interface JourneyMilestone {
 }
 
 export async function loadJourneyMilestones(): Promise<JourneyMilestone[] | null> {
-  const { supabase } = await import('./supabase');
-  const { data } = await supabase.from('journey').select('*').order('display_order');
+  const { data } = await getJourney();
   if (data && data.length > 0) {
-    return data.map((j: any) => ({
+    return data.map((j) => ({
       id: j.id,
       title: j.title,
       subtitle: j.subtitle || '',

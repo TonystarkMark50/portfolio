@@ -1,1 +1,1 @@
-export const OWNER_EMAIL = 'shakthijagadeesh907@gmail.com';
+export const OWNER_EMAIL = import.meta.env.VITE_OWNER_EMAIL || 'shakthijagadeesh907@gmail.com';

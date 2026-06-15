@@ -1,21 +1,30 @@
-import { useEffect } from 'react';
+import { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AdminProvider, useAdmin } from './context/AdminContext';
 import Navbar from './components/Navbar';
 import { BackToTop, Footer } from './components/ScrollComponents';
 import ErrorBoundary from './components/ErrorBoundary';
-import Hero from './sections/Hero';
-import About from './sections/About';
-import Internship from './sections/Internship';
-import Projects from './sections/Projects';
-import Skills from './sections/Skills';
-import Certifications from './sections/Certifications';
-import Journey from './sections/Journey';
-import Education from './sections/Education';
-import Contact from './sections/Contact';
-import AdminLogin from './pages/AdminLogin';
-import AdminPanel from './pages/AdminApp';
+
+const Hero = lazy(() => import('./sections/Hero'));
+const About = lazy(() => import('./sections/About'));
+const Internship = lazy(() => import('./sections/Internship'));
+const Projects = lazy(() => import('./sections/Projects'));
+const Skills = lazy(() => import('./sections/Skills'));
+const Certifications = lazy(() => import('./sections/Certifications'));
+const Journey = lazy(() => import('./sections/Journey'));
+const Education = lazy(() => import('./sections/Education'));
+const Contact = lazy(() => import('./sections/Contact'));
+const AdminLogin = lazy(() => import('./pages/AdminLogin'));
+const AdminPanel = lazy(() => import('./pages/AdminApp'));
+
+function SectionFallback() {
+  return (
+    <div className="h-64 flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAdmin();
@@ -38,33 +47,51 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function MainSite() {
   return (
     <main className="relative">
-      <ErrorBoundary sectionName="Hero">
-        <Hero />
-      </ErrorBoundary>
-      <ErrorBoundary sectionName="About">
-        <About />
-      </ErrorBoundary>
-      <ErrorBoundary sectionName="Internship">
-        <Internship />
-      </ErrorBoundary>
-      <ErrorBoundary sectionName="Projects">
-        <Projects />
-      </ErrorBoundary>
-      <ErrorBoundary sectionName="Skills">
-        <Skills />
-      </ErrorBoundary>
-      <ErrorBoundary sectionName="Education">
-        <Education />
-      </ErrorBoundary>
-      <ErrorBoundary sectionName="Certifications">
-        <Certifications />
-      </ErrorBoundary>
-      <ErrorBoundary sectionName="Journey">
-        <Journey />
-      </ErrorBoundary>
-      <ErrorBoundary sectionName="Contact">
-        <Contact />
-      </ErrorBoundary>
+      <Suspense fallback={<SectionFallback />}>
+        <ErrorBoundary sectionName="Hero">
+          <Hero />
+        </ErrorBoundary>
+      </Suspense>
+      <Suspense fallback={<SectionFallback />}>
+        <ErrorBoundary sectionName="About">
+          <About />
+        </ErrorBoundary>
+      </Suspense>
+      <Suspense fallback={<SectionFallback />}>
+        <ErrorBoundary sectionName="Internship">
+          <Internship />
+        </ErrorBoundary>
+      </Suspense>
+      <Suspense fallback={<SectionFallback />}>
+        <ErrorBoundary sectionName="Projects">
+          <Projects />
+        </ErrorBoundary>
+      </Suspense>
+      <Suspense fallback={<SectionFallback />}>
+        <ErrorBoundary sectionName="Skills">
+          <Skills />
+        </ErrorBoundary>
+      </Suspense>
+      <Suspense fallback={<SectionFallback />}>
+        <ErrorBoundary sectionName="Education">
+          <Education />
+        </ErrorBoundary>
+      </Suspense>
+      <Suspense fallback={<SectionFallback />}>
+        <ErrorBoundary sectionName="Certifications">
+          <Certifications />
+        </ErrorBoundary>
+      </Suspense>
+      <Suspense fallback={<SectionFallback />}>
+        <ErrorBoundary sectionName="Journey">
+          <Journey />
+        </ErrorBoundary>
+      </Suspense>
+      <Suspense fallback={<SectionFallback />}>
+        <ErrorBoundary sectionName="Contact">
+          <Contact />
+        </ErrorBoundary>
+      </Suspense>
     </main>
   );
 }
@@ -83,13 +110,15 @@ function AppContent() {
     <>
       <ScrollToTop />
       <Routes>
-      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/admin/login" element={<Suspense fallback={<SectionFallback />}><AdminLogin /></Suspense>} />
       <Route
         path="/admin/*"
         element={
-          <ProtectedRoute>
-            <AdminPanel />
-          </ProtectedRoute>
+          <Suspense fallback={<SectionFallback />}>
+            <ProtectedRoute>
+              <AdminPanel />
+            </ProtectedRoute>
+          </Suspense>
         }
       />
       <Route

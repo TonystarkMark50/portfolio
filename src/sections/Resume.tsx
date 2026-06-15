@@ -1,9 +1,10 @@
-import { useEffect, useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Download, FileText, Briefcase, GraduationCap, Award, Code2 } from 'lucide-react';
 import { useIntersectionObserver } from '../hooks/useScroll';
 import { useSupabaseData } from '../hooks/usePortfolioData';
 import { loadResumeData, ResumeData } from '../lib/loaders';
 import { trackResumeDownload, getResumeDownloadCount } from '../lib/supabase';
+import { generateAndDownloadResume } from '../utils/generateResume';
 
 function mapResumeForDisplay(data: ResumeData) {
   const p = data.personalInfo;
@@ -38,24 +39,18 @@ function mapResumeForDisplay(data: ResumeData) {
 export default function Resume() {
   const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1 });
   const { data: resumeData } = useSupabaseData(loadResumeData);
-  const [downloadCount, setDownloadCount] = useState(0);
+  const { data: initialCount } = useSupabaseData(getResumeDownloadCount);
+  const [downloads, setDownloads] = useState(0);
   const resumeRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    async function loadCount() {
-      const count = await getResumeDownloadCount();
-      setDownloadCount(count);
-    }
-    loadCount();
-  }, []);
-
   const handleDownload = async () => {
-    await trackResumeDownload();
-    setDownloadCount(prev => prev + 1);
+    await Promise.all([trackResumeDownload(), generateAndDownloadResume()]);
+    setDownloads(prev => prev + 1);
   };
 
   if (!resumeData) return null;
   const display = mapResumeForDisplay(resumeData);
+  const downloadCount = (initialCount || 0) + downloads;
 
   return (
     <section

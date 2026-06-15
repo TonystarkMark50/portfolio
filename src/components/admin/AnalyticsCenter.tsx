@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Eye, Download, MessageSquare, Monitor, Smartphone, Tablet, Globe,
-  TrendingUp, TrendingDown, Minus, BarChart3, MousePointerClick, Activity
+  TrendingUp, TrendingDown, Minus, BarChart3, MousePointerClick
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { getProjects } from '../../lib/api';

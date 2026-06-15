@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Mail, Search, Inbox, Archive, ExternalLink, MessageSquare, Trash2, Filter, Check, X } from 'lucide-react';
+import { Mail, Search, Inbox, Archive, ExternalLink, MessageSquare, Trash2, Filter, Check } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface Contact {

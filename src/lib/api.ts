@@ -104,15 +104,6 @@ export interface ContactInfo {
   phone: string | null;
 }
 
-export interface SiteSettings {
-  id: string;
-  site_title: string;
-  favicon_url: string | null;
-  seo_description: string | null;
-  seo_keywords: string | null;
-  theme: string;
-}
-
 export interface Project {
   id: string;
   name: string;
@@ -128,6 +119,15 @@ export interface Project {
   demo_url: string | null;
   featured: boolean;
   display_order: number;
+}
+
+export interface SiteSettings {
+  id: string;
+  site_title: string;
+  favicon_url: string | null;
+  seo_description: string | null;
+  seo_keywords: string | null;
+  theme: string;
 }
 
 // ============================================================
@@ -284,14 +284,6 @@ export async function upsertContactInfo(contact: Partial<ContactInfo>) {
 
 export async function getProjects() {
   return getAll<Project>('projects', 'display_order');
-}
-
-export async function upsertProject(project: Partial<Project>) {
-  return upsert<Project>('projects', project);
-}
-
-export async function deleteProject(id: string) {
-  return remove('projects', id);
 }
 
 // ============================================================

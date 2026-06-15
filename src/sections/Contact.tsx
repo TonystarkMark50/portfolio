@@ -64,13 +64,9 @@ export default function Contact() {
   const nameRef = useRef<HTMLInputElement>(null);
   const handleChange = useCallback((field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-    if (submitStatus !== 'idle') {
-      setSubmitStatus('idle');
-    }
-  }, [errors, submitStatus]);
+    setErrors((prev) => ({ ...prev, [field]: undefined }));
+    setSubmitStatus((prev) => prev !== 'idle' ? 'idle' : prev);
+  }, []);
   if (!contactInfoData) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,7 +86,14 @@ export default function Contact() {
     setSubmitStatus('idle');
 
     try {
-      const formPayload = {
+      const dbResult = await submitContactForm({
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      });
+
+      const web3formsPayload = {
         access_key: WEB3FORMS_ACCESS_KEY,
         name: formData.name,
         email: formData.email,
@@ -98,22 +101,24 @@ export default function Contact() {
         message: formData.message,
       };
 
-      const res = await fetch(WEB3FORMS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formPayload),
-      });
+      let web3formsOk = false;
+      try {
+        const res = await fetch(WEB3FORMS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(web3formsPayload),
+        });
+        const data = await res.json();
+        web3formsOk = !!data.success;
+      } catch {}
 
-      const data = await res.json();
-
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to send message');
+      if (!dbResult.success && !web3formsOk) {
+        throw new Error('Failed to send message');
       }
 
       setSubmitStatus('success');
       setFormData({ name: '', email: '', subject: '', message: '' });
       setErrors({});
-      submitContactForm({ name: formData.name, email: formData.email, subject: formData.subject, message: formData.message });
     } catch {
       setSubmitStatus('error');
     } finally {

@@ -17,31 +17,41 @@ const verifyIconLoads = (url: string): Promise<boolean> => {
 };
 
 export async function generateAndDownloadResume(): Promise<void> {
-  const iconsToLoad: Record<string, string> = {
-    github: githubIcon as string,
-    linkedin: linkdinIcon as string,
-    location: locationIcon as string,
-    email: emailIcon as string,
-  };
+  try {
+    const iconsToLoad: Record<string, string> = {
+      github: githubIcon as string,
+      linkedin: linkdinIcon as string,
+      location: locationIcon as string,
+      email: emailIcon as string,
+    };
 
-  const verifiedIcons: Record<string, string> = {};
-  for (const [key, url] of Object.entries(iconsToLoad)) {
-    const isValid = await verifyIconLoads(url);
-    if (isValid) {
-      verifiedIcons[key] = url;
+    const results = await Promise.all(
+      Object.entries(iconsToLoad).map(async ([key, url]) => {
+        const isValid = await verifyIconLoads(url);
+        return [key, isValid ? url : null] as const;
+      })
+    );
+    const verifiedIcons: Record<string, string> = {};
+    for (const [key, url] of results) {
+      if (url) verifiedIcons[key] = url;
     }
+
+    const resumeData = await loadResumeData();
+    if (!resumeData) throw new Error('No resume data available');
+
+    const blob = await pdf(<ATSResume data={resumeData} icons={verifiedIcons} />).toBlob();
+    const url = URL.createObjectURL(blob);
+    const name = resumeData?.personalInfo?.name?.replace(/\s+/g, '_') || 'Resume';
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${name}_Resume.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (err) {
+    console.error('Failed to generate resume:', err);
   }
-
-  const resumeData = await loadResumeData();
-  const blob = await pdf(<ATSResume data={resumeData} icons={verifiedIcons} />).toBlob();
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'Jagadeesh_T_Resume.pdf';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }

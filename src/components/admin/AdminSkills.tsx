@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Code2 } from 'lucide-react';
 import { getSkills, upsertSkill, deleteSkill, Skill } from '../../lib/api';
-import ContentEditor, { InlineField, InlineTags, InlineSelect, useAutoSave } from './ContentEditor';
+import ContentEditor, { InlineTags, InlineSelect, useAutoSave } from './ContentEditor';
 
 const categories = ['Programming', 'Database', 'Biomedical Engineering', 'Professional Skills'];
 const gradients = ['from-blue-400', 'from-purple-400', 'from-emerald-400', 'from-amber-400'];

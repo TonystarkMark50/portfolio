@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Award, Upload, ShieldCheck, ShieldAlert, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Award, ShieldCheck, ShieldAlert, Image as ImageIcon } from 'lucide-react';
 import { getCertifications, upsertCertification, deleteCertification, Certification } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Briefcase, ExternalLink, Github, Image } from 'lucide-react';
+import { Plus, Trash2, Briefcase, Image } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import ContentEditor, { InlineField, InlineTags, InlineSelect, InlineBool, useAutoSave } from './ContentEditor';
 

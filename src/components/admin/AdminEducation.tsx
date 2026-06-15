@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, GraduationCap, BookOpen } from 'lucide-react';
+import { Plus, Trash2, GraduationCap } from 'lucide-react';
 import { getEducation, upsertEducation, deleteEducation, Education } from '../../lib/api';
 import ContentEditor, { InlineField, InlineBool, useAutoSave } from './ContentEditor';
 

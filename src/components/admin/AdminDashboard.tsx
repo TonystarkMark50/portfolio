@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
 import {
-  User, BookOpen, Briefcase, Award, Code2, GraduationCap, Map, Mail, FileText,
-  ExternalLink, Clock, CheckCircle, AlertTriangle, Sparkles, Activity, Monitor, Tablet, Smartphone,
-  Edit3, Eye, RefreshCw, Download, ShieldCheck, ShieldAlert, Globe, Image, Link,
-  Github, Linkedin, Upload, Search, Send, BarChart3, Settings, Trash2,
-  ChevronRight, Bell, Zap, Moon, Sun, MessageSquare, Plus, X, Star
+  User, Briefcase, Award, Code2, GraduationCap, Map, Mail, FileText,
+  Clock, CheckCircle, AlertTriangle, Sparkles, Activity, Monitor, Tablet, Smartphone,
+  Edit3, Eye, RefreshCw, Download, ShieldCheck, ShieldAlert, Globe, Image,
+  Github, Linkedin, Upload, BarChart3, Settings,
+  ChevronRight, Zap, Moon, MessageSquare
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import {
   getProjects, getSkills, getCertifications, getEducation, getInternships,
   getProfile, Profile, Project, Certification, Education as EduType,
-  Skill, Internship, upsertProfile
+  Skill, Internship
 } from '../../lib/api';
 import type { AdminTab } from './AdminLayout';
 
@@ -76,7 +76,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
   const [activities, setActivities] = useState<{ id: string; action: string; email: string; created_at: string }[]>([]);
   const [messages, setMessages] = useState<{ id: string; name: string; subject: string; status: string; created_at: string }[]>([]);
   const [unreadMessages, setUnreadMessages] = useState(0);
-  const [settings, setSettings] = useState<{ site_title?: string; seo_description?: string } | null>(null);
+  const [_settings, setSettings] = useState<{ site_title?: string; seo_description?: string } | null>(null);
   const [device, setDevice] = useState<DeviceType>('desktop');
   const [loading, setLoading] = useState(true);
   const [seoTitle, setSeoTitle] = useState('');
@@ -87,45 +87,48 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
   useEffect(() => { loadAll(); }, []);
 
   async function loadAll() {
-    const [
-      pRes, projRes, certRes, eduRes, skillRes, internRes,
-      auditRes, msgRes, settingsRes,
-    ] = await Promise.all([
-      getProfile(), getProjects(), getCertifications(), getEducation(), getSkills(), getInternships(),
-      supabase.from('admin_audit_log').select('*').order('created_at', { ascending: false }).limit(10),
-      supabase.from('contact_submissions').select('*', { count: 'exact', head: true }).eq('status', 'new'),
-      supabase.from('site_settings').select('*').limit(1).maybeSingle(),
-    ]);
-    setProfile(pRes.data);
-    setProjects(projRes.data || []);
-    setCertifications(certRes.data || []);
-    setEducation(eduRes.data || []);
-    setSkills(skillRes.data || []);
-    setInternships(internRes.data || []);
-    if (auditRes.data) setActivities(auditRes.data);
-    setUnreadMessages(msgRes.count || 0);
-    if (settingsRes.data) {
-      const s = settingsRes.data as any;
-      setSettings(s);
-      setSeoTitle(s.site_title || '');
-      setSeoDesc(s.seo_description || '');
-    }
-
-    const { data: msgs } = await supabase.from('contact_submissions').select('id, name, subject, status, created_at').order('created_at', { ascending: false }).limit(5);
-    if (msgs) setMessages(msgs);
-
-    const allMedia: { name: string; url: string }[] = [];
-    for (const bucket of ['certification-logos', 'project-images', 'resume-assets']) {
-      const { data: files } = await supabase.storage.from(bucket).list();
-      if (files) {
-        for (const f of files) {
-          const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(f.name);
-          allMedia.push({ name: f.name, url: publicUrl });
-        }
+    try {
+      const [
+        pRes, projRes, certRes, eduRes, skillRes, internRes,
+        auditRes, msgRes, settingsRes,
+      ] = await Promise.all([
+        getProfile(), getProjects(), getCertifications(), getEducation(), getSkills(), getInternships(),
+        supabase.from('admin_audit_log').select('*').order('created_at', { ascending: false }).limit(10),
+        supabase.from('contact_submissions').select('*', { count: 'exact', head: true }).eq('status', 'new'),
+        supabase.from('site_settings').select('*').limit(1).maybeSingle(),
+      ]);
+      setProfile(pRes.data);
+      setProjects(projRes.data || []);
+      setCertifications(certRes.data || []);
+      setEducation(eduRes.data || []);
+      setSkills(skillRes.data || []);
+      setInternships(internRes.data || []);
+      if (auditRes.data) setActivities(auditRes.data);
+      setUnreadMessages(msgRes.count || 0);
+      if (settingsRes.data) {
+        const s = settingsRes.data as any;
+        setSettings(s); // eslint-disable-line no-unused-vars
+        setSeoTitle(s.site_title || '');
+        setSeoDesc(s.seo_description || '');
       }
-    }
-    setMediaItems(allMedia.slice(0, 8));
 
+      const { data: msgs } = await supabase.from('contact_submissions').select('id, name, subject, status, created_at').order('created_at', { ascending: false }).limit(5);
+      if (msgs) setMessages(msgs);
+
+      const bucketResults = await Promise.all(
+        ['certification-logos', 'project-images', 'resume-assets'].map(async (bucket) => {
+          const { data: files } = await supabase.storage.from(bucket).list();
+          if (!files) return [];
+          return files.map(f => {
+            const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(f.name);
+            return { name: f.name, url: publicUrl };
+          });
+        })
+      );
+      setMediaItems(bucketResults.flat().slice(0, 8));
+    } catch (err) {
+      console.error('Dashboard load failed:', err);
+    }
     setLoading(false);
   }
 
@@ -155,7 +158,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
   async function handleSaveSEO() {
     setSaving(true);
     await supabase.from('site_settings').upsert({ site_title: seoTitle, seo_description: seoDesc });
-    setTimeout(() => setSaving(false), 800);
+    setSaving(false);
   }
 
   const siteUrl = window.location.origin;

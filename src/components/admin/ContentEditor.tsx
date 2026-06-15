@@ -1,5 +1,5 @@
 import { useState, useEffect, ReactNode, useRef, useCallback } from 'react';
-import { Monitor, Tablet, Smartphone, Check, Clock, AlertTriangle, Loader2, Save, Globe, ExternalLink } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, Check, Clock, AlertTriangle, Loader2, Globe, ExternalLink } from 'lucide-react';
 import Hero from '../../sections/Hero';
 import About from '../../sections/About';
 import Skills from '../../sections/Skills';
@@ -98,14 +98,31 @@ export function AutoSaveBar({ status, onSave }: { status: SaveStatus; onSave?: (
   );
 }
 
-export function useAutoSave(saveFn: () => Promise<void>, deps: any[]) {
+export function useAutoSave(saveFn: () => Promise<void>, _deps: any[]) {
   const [status, setStatus] = useState<SaveStatus>('idle');
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
   const mountedRef = useRef(true);
   const saveRef = useRef(saveFn);
   saveRef.current = saveFn;
+  const statusRef = useRef(status);
+  statusRef.current = status;
 
-  useEffect(() => { return () => { mountedRef.current = false; }; }, []);
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (statusRef.current === 'unsaved' || statusRef.current === 'saving') {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      mountedRef.current = false;
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (statusRef.current === 'unsaved' || statusRef.current === 'saving') {
+        saveRef.current();
+      }
+    };
+  }, []);
 
   const triggerSave = useCallback(() => {
     setStatus('unsaved');
@@ -114,7 +131,10 @@ export function useAutoSave(saveFn: () => Promise<void>, deps: any[]) {
       setStatus('saving');
       try {
         await saveRef.current();
-        if (mountedRef.current) setStatus('saved');
+        if (mountedRef.current) {
+          setStatus('saved');
+          setTimeout(() => { if (mountedRef.current) setStatus('idle'); }, 2000);
+        }
       } catch {
         if (mountedRef.current) setStatus('error');
       }
@@ -126,7 +146,10 @@ export function useAutoSave(saveFn: () => Promise<void>, deps: any[]) {
     setStatus('saving');
     try {
       await saveRef.current();
-      if (mountedRef.current) setStatus('saved');
+      if (mountedRef.current) {
+        setStatus('saved');
+        setTimeout(() => { if (mountedRef.current) setStatus('idle'); }, 2000);
+      }
     } catch {
       if (mountedRef.current) setStatus('error');
     }
@@ -168,7 +191,7 @@ export default function ContentEditor({
       setPreviewKey(k => k + 1);
       try {
         iframeRef.current?.contentWindow?.location.reload();
-      } catch {}
+      } catch { /* empty */ }
     }, 300);
     return () => clearTimeout(t);
   }, [status]);
@@ -219,7 +242,7 @@ export default function ContentEditor({
                 </button>
               )}
               <div className="flex items-center gap-1 bg-gray-900 rounded-lg p-0.5">
-                {(Object.entries(deviceConfig) as [DeviceType, typeof cfg][]).map(([key, d]) => (
+                {(Object.entries(deviceConfig) as [DeviceType, typeof cfg][]).map(([key]) => (
                   <button key={key} onClick={() => setDevice(key)} className={`p-1.5 rounded-md transition-colors ${device === key ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
                     {key === 'desktop' ? <Monitor className="w-3.5 h-3.5" /> : key === 'tablet' ? <Tablet className="w-3.5 h-3.5" /> : <Smartphone className="w-3.5 h-3.5" />}
                   </button>

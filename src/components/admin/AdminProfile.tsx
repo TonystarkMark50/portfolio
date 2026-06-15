@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, MapPin, Link as LinkIcon, Github, Linkedin } from 'lucide-react';
+import { Mail, MapPin, Link as LinkIcon, Github, Linkedin } from 'lucide-react';
 import { getProfile, upsertProfile, Profile } from '../../lib/api';
 import ContentEditor, { InlineField, useAutoSave } from './ContentEditor';
 

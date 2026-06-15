@@ -104,16 +104,3 @@ class ErrorBoundary extends Component<Props, State> {
 }
 
 export default ErrorBoundary;
-
-export function withErrorBoundary<P extends object>(
-  WrappedComponent: React.ComponentType<P>,
-  sectionName: string
-) {
-  return function WithErrorBoundaryWrapper(props: P) {
-    return (
-      <ErrorBoundary sectionName={sectionName}>
-        <WrappedComponent {...props} />
-      </ErrorBoundary>
-    );
-  };
-}

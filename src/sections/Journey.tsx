@@ -197,14 +197,12 @@ function MilestoneItem({
 function MilestoneContent({
   milestone,
   gradient,
-  Icon,
   highlights,
   isExpanded,
   onToggle,
 }: {
   milestone: JourneyMilestone;
   gradient: string;
-  Icon: React.ComponentType<{ className?: string }>;
   highlights: string[];
   isExpanded: boolean;
   onToggle: () => void;

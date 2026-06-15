@@ -2,9 +2,9 @@ import { ReactNode, useState, useEffect, useRef } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import {
   LayoutDashboard, User, BookOpen, Code2, Briefcase, GraduationCap, Award,
-  Map, Mail, Settings, ArrowLeft, LogOut, FileText, Image, Search,
-  ChevronLeft, ChevronRight, Bell, BarChart3, Globe, ExternalLink,
-  Clock, Circle, Zap, RefreshCw, CheckCheck
+  Map, Mail, Settings, LogOut, FileText, Image, Search,
+  ChevronLeft, ChevronRight, Bell, BarChart3, ExternalLink,
+  Clock, Zap, CheckCheck
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import CommandPalette from './CommandPalette';
