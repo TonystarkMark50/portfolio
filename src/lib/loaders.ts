@@ -110,7 +110,7 @@ export async function loadProfile(): Promise<PersonalInfo | null> {
       email: data.email || '',
       linkedin: data.linkedin || '',
       github: data.github || '',
-      avatar_url: (data as any).avatar_url || (data as any).profile_photo_url || null,
+      avatar_url: data.avatar_url || null,
     };
   }
   return null;
