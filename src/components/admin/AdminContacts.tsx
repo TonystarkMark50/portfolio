@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 
 interface Contact {
   id: string; name: string; email: string; subject: string; message: string;
-  status: string; created_at: string;
+  status: string; is_read: boolean; created_at: string;
 }
 
 export default function AdminContacts() {
@@ -33,13 +33,22 @@ export default function AdminContacts() {
   }
 
   async function updateStatus(id: string, status: string) {
-    await supabase.from('contact_submissions').update({ status }).eq('id', id);
+    const is_read = status !== 'new';
+    const { error } = await supabase.from('contact_submissions').update({ status, is_read }).eq('id', id);
+    if (error) console.error('Failed to update status:', error);
+    load();
+  }
+
+  async function markAsRead(id: string) {
+    const { error } = await supabase.from('contact_submissions').update({ is_read: true }).eq('id', id);
+    if (error) console.error('Failed to mark as read:', error);
     load();
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this message?')) return;
-    await supabase.from('contact_submissions').delete().eq('id', id);
+    const { error } = await supabase.from('contact_submissions').delete().eq('id', id);
+    if (error) console.error('Failed to delete message:', error);
     if (selected === id) setSelected(null);
     load();
   }
@@ -53,7 +62,7 @@ export default function AdminContacts() {
     return true;
   });
 
-  const unreadCount = contacts.filter(c => c.status === 'new').length;
+  const unreadCount = contacts.filter(c => !c.is_read).length;
   const totalCount = contacts.length;
 
   if (loading) return <div className="animate-pulse h-64 bg-gray-800 rounded-xl" />;
@@ -96,14 +105,14 @@ export default function AdminContacts() {
                 <Inbox className="w-10 h-10 mx-auto mb-2 text-gray-600" />
                 <p className="text-sm">No messages found</p>
               </div>
-            ) : filtered.map(c => (
-              <button key={c.id} onClick={() => setSelected(c.id)} className={`w-full text-left p-3 rounded-lg transition-colors ${
+              ) : filtered.map(c => (
+              <button key={c.id} onClick={() => { setSelected(c.id); if (!c.is_read) markAsRead(c.id); }} className={`w-full text-left p-3 rounded-lg transition-colors ${
                 selected === c.id ? 'bg-blue-500/10 border border-blue-500/20' : 'hover:bg-gray-800 border border-transparent'
-              } ${c.status === 'new' ? 'bg-blue-500/5' : ''}`}>
+              } ${!c.is_read ? 'bg-blue-500/5' : ''}`}>
                 <div className="flex items-start justify-between mb-1">
-                  <span className={`text-sm font-medium ${c.status === 'new' ? 'text-white' : 'text-gray-300'}`}>{c.name}</span>
+                  <span className={`text-sm font-medium ${!c.is_read ? 'text-white' : 'text-gray-300'}`}>{c.name}</span>
                   <div className="flex items-center gap-2 shrink-0">
-                    {c.status === 'new' && <span className="w-2 h-2 rounded-full bg-blue-400" />}
+                    {!c.is_read && <span className="w-2 h-2 rounded-full bg-blue-400" />}
                     <span className="text-[10px] text-gray-600">{new Date(c.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>

@@ -3,7 +3,8 @@ import { Download, FileText, Briefcase, GraduationCap, Award, Code2 } from 'luci
 import { useIntersectionObserver } from '../hooks/useScroll';
 import { useSupabaseData } from '../hooks/usePortfolioData';
 import { loadResumeData, ResumeData } from '../lib/loaders';
-import { trackResumeDownload, getResumeDownloadCount } from '../lib/supabase';
+import { trackResumeDownload } from '../lib/analytics';
+import { getResumeDownloadCount } from '../lib/supabase';
 import { generateAndDownloadResume } from '../utils/generateResume';
 
 function mapResumeForDisplay(data: ResumeData) {

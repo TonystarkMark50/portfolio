@@ -7,6 +7,7 @@ import {
 import { useMousePosition } from '../hooks/useScroll';
 import { useSupabaseData } from '../hooks/usePortfolioData';
 import { loadProfile, loadAbout } from '../lib/loaders';
+import { trackResumeDownload } from '../lib/analytics';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -108,7 +109,7 @@ export default function Hero() {
     setIsGenerating(true);
     try {
       const { generateAndDownloadResume } = await import('../utils/generateResume');
-      await generateAndDownloadResume();
+      await Promise.all([generateAndDownloadResume(), trackResumeDownload()]);
     } finally {
       setIsGenerating(false);
     }

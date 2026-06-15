@@ -4,7 +4,7 @@ import {
   LayoutDashboard, User, BookOpen, Code2, Briefcase, GraduationCap, Award,
   Map, Mail, Settings, LogOut, FileText, Image, Search,
   ChevronLeft, ChevronRight, Bell, BarChart3, ExternalLink,
-  Clock, Zap, CheckCheck
+  Clock, Zap, CheckCheck, Trash2, X
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import CommandPalette from './CommandPalette';
@@ -73,6 +73,14 @@ export default function AdminLayout({
   const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [notifications, setNotifications] = useState<{ id: string; text: string; time: string; icon: any; read: boolean }[]>([]);
   const notifRef = useRef<HTMLDivElement>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
+  const toastTimeout = useRef<ReturnType<typeof setTimeout>>();
+
+  function showToast(message: string, type: 'error' | 'success' = 'error') {
+    setToast({ message, type });
+    if (toastTimeout.current) clearTimeout(toastTimeout.current);
+    toastTimeout.current = setTimeout(() => setToast(null), 4000);
+  }
 
   useEffect(() => {
     loadNotifications();
@@ -87,20 +95,18 @@ export default function AdminLayout({
   }, []);
 
   async function loadNotifications() {
-    const { data: msgs } = await supabase
-      .from('contact_submissions')
-      .select('id, name, created_at, status')
-      .order('created_at', { ascending: false })
-      .limit(5);
-    if (msgs) {
-      const newCount = msgs.filter(m => m.status === 'new').length;
-      setUnreadNotifs(newCount);
-      setNotifications(msgs.map(m => ({
+    const [countRes, msgsRes] = await Promise.all([
+      supabase.from('contact_submissions').select('*', { count: 'exact', head: true }).eq('is_read', false),
+      supabase.from('contact_submissions').select('id, name, created_at, is_read').order('created_at', { ascending: false }).limit(10)
+    ]);
+    if (countRes.count !== null) setUnreadNotifs(countRes.count);
+    if (msgsRes.data) {
+      setNotifications(msgsRes.data.map(m => ({
         id: m.id,
         text: `New message from ${m.name}`,
         time: formatTimeAgo(m.created_at),
         icon: Mail,
-        read: m.status !== 'new',
+        read: m.is_read,
       })));
     }
   }
@@ -116,11 +122,34 @@ export default function AdminLayout({
   }
 
   async function markAllRead() {
-    const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
-    if (unreadIds.length === 0) return;
-    await supabase.from('contact_submissions').update({ status: 'read' }).in('id', unreadIds);
+    const { error } = await supabase.from('contact_submissions').update({ is_read: true }).eq('is_read', false);
+    if (error) { showToast('Failed to mark all as read'); return; }
     setUnreadNotifs(0);
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  }
+
+  async function markAsRead(id: string) {
+    const { error } = await supabase.from('contact_submissions').update({ is_read: true }).eq('id', id);
+    if (error) { showToast('Failed to mark notification as read'); return; }
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    setUnreadNotifs(prev => Math.max(0, prev - 1));
+  }
+
+  async function deleteNotification(e: React.MouseEvent, id: string) {
+    e.stopPropagation();
+    if (!confirm('Delete this notification?')) return;
+    const { error } = await supabase.from('contact_submissions').delete().eq('id', id);
+    if (error) { showToast('Failed to delete notification'); return; }
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    loadNotifications();
+  }
+
+  async function clearAll() {
+    if (!confirm('Delete all notifications?')) return;
+    const { error } = await supabase.from('contact_submissions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error) { showToast('Failed to clear notifications'); return; }
+    setNotifications([]);
+    setUnreadNotifs(0);
   }
 
   useEffect(() => {
@@ -146,6 +175,17 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <CommandPalette onNavigate={onTabChange} open={cmdOpen} onClose={() => setCmdOpen(false)} />
+
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-2xl text-sm font-medium transition-all ${
+          toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
+        }`}>
+          <div className="flex items-center gap-2">
+            <span>{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-2 hover:opacity-80"><X className="w-3.5 h-3.5" /></button>
+          </div>
+        </div>
+      )}
 
       {/* Sidebar */}
       <aside className={`fixed left-0 top-0 h-full ${collapsed ? 'w-[68px]' : 'w-60'} bg-gray-900 border-r border-gray-800 z-40 transition-all duration-300 flex flex-col`}>
@@ -244,11 +284,18 @@ export default function AdminLayout({
                 <div className="absolute right-0 top-full mt-2 w-80 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50">
                   <div className="p-3 border-b border-gray-800 flex items-center justify-between">
                     <p className="text-xs font-semibold text-gray-200">Notifications</p>
-                    {unreadNotifs > 0 && (
-                      <button onClick={markAllRead} className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors">
-                        <CheckCheck className="w-3 h-3" /> Mark all read
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {notifications.length > 0 && (
+                        <button onClick={clearAll} className="flex items-center gap-1 text-[10px] text-red-400 hover:text-red-300 transition-colors">
+                          <Trash2 className="w-3 h-3" /> Clear all
+                        </button>
+                      )}
+                      {unreadNotifs > 0 && (
+                        <button onClick={markAllRead} className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors">
+                          <CheckCheck className="w-3 h-3" /> Mark all read
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="max-h-64 overflow-y-auto">
                     {notifications.length === 0 ? (
@@ -257,7 +304,7 @@ export default function AdminLayout({
                         <p>No notifications</p>
                       </div>
                     ) : notifications.map(n => (
-                      <div key={n.id} className={`flex items-start gap-3 p-3 hover:bg-gray-800 transition-colors cursor-pointer border-b border-gray-800 last:border-0 ${n.read ? 'opacity-60' : ''}`}>
+                      <div key={n.id} onClick={() => { markAsRead(n.id); onTabChange('contact'); }} className={`group flex items-start gap-3 p-3 hover:bg-gray-800 transition-colors cursor-pointer border-b border-gray-800 last:border-0 ${n.read ? 'opacity-60' : ''}`}>
                         <div className="w-7 h-7 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
                           <n.icon className="w-3.5 h-3.5 text-blue-400" />
                         </div>
@@ -265,7 +312,12 @@ export default function AdminLayout({
                           <p className="text-xs text-gray-200">{n.text}</p>
                           <p className="text-[10px] text-gray-500">{n.time}</p>
                         </div>
-                        {!n.read && <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0 mt-1" />}
+                        <div className="flex items-center gap-1.5">
+                          {!n.read && <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0 mt-1" />}
+                          <button onClick={(e) => deleteNotification(e, n.id)} className="p-1 rounded hover:bg-gray-700 text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>

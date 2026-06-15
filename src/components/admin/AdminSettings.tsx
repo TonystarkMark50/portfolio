@@ -19,11 +19,13 @@ export default function AdminSettings() {
   }, []);
 
   async function saveSettings() {
-    await upsertSiteSettings(settings);
+    const { error } = await upsertSiteSettings(settings);
+    if (error) throw error;
   }
 
   async function saveContact() {
-    await upsertContactInfo(contact);
+    const { error } = await upsertContactInfo(contact);
+    if (error) throw error;
   }
 
   const { status: settingsStatus, triggerSave: triggerSettingsSave } = useAutoSave(saveSettings);

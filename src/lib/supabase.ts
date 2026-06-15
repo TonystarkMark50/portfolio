@@ -37,22 +37,6 @@ export async function submitContactForm(formData: {
   }
 }
 
-// Resume tracking
-export async function trackResumeDownload(): Promise<void> {
-  try {
-    const response = await fetch('https://api.ipify.org?format=json');
-    const { ip } = await response.json();
-
-    await supabase.from('resume_downloads').insert({
-      user_ip: ip,
-      user_agent: navigator.userAgent,
-      referrer: document.referrer || null,
-    });
-  } catch (error) {
-    console.error('Error tracking resume download:', error);
-  }
-}
-
 export async function getResumeDownloadCount(): Promise<number> {
   const { count, error } = await supabase
     .from('resume_downloads')

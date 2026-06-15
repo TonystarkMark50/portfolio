@@ -74,7 +74,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
   const [skills, setSkills] = useState<Skill[]>([]);
   const [internships, setInternships] = useState<Internship[]>([]);
   const [activities, setActivities] = useState<{ id: string; action: string; email: string; created_at: string }[]>([]);
-  const [messages, setMessages] = useState<{ id: string; name: string; subject: string; status: string; created_at: string }[]>([]);
+  const [messages, setMessages] = useState<{ id: string; name: string; subject: string; is_read: boolean; created_at: string }[]>([]);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [device, setDevice] = useState<DeviceType>('desktop');
   const [loading, setLoading] = useState(true);
@@ -93,7 +93,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
       ] = await Promise.all([
         getProfile(), getProjects(), getCertifications(), getEducation(), getSkills(), getInternships(),
         supabase.from('admin_audit_log').select('*').order('created_at', { ascending: false }).limit(10),
-        supabase.from('contact_submissions').select('*', { count: 'exact', head: true }).eq('status', 'new'),
+        supabase.from('contact_submissions').select('*', { count: 'exact', head: true }).eq('is_read', false),
         supabase.from('site_settings').select('*').limit(1).maybeSingle(),
       ]);
       setProfile(pRes.data);
@@ -110,7 +110,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
         setSeoDesc(s.seo_description || '');
       }
 
-      const { data: msgs } = await supabase.from('contact_submissions').select('id, name, subject, status, created_at').order('created_at', { ascending: false }).limit(5);
+      const { data: msgs } = await supabase.from('contact_submissions').select('id, name, subject, is_read, created_at').order('created_at', { ascending: false }).limit(5);
       if (msgs) setMessages(msgs);
 
       const bucketResults = await Promise.all(
@@ -594,7 +594,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium text-white truncate">{m.name}</p>
-                      {m.status === 'new' && <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />}
+                      {!m.is_read && <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />}
                     </div>
                     <p className="text-xs text-gray-400 truncate">{m.subject || 'No subject'}</p>
                     <p className="text-[10px] text-gray-600 mt-0.5">{formatTimeAgo(m.created_at)}</p>

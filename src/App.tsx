@@ -5,6 +5,7 @@ import { AdminProvider, useAdmin } from './context/AdminContext';
 import Navbar from './components/Navbar';
 import { BackToTop, Footer } from './components/ScrollComponents';
 import ErrorBoundary from './components/ErrorBoundary';
+import { trackPageView } from './lib/analytics';
 
 const Hero = lazy(() => import('./sections/Hero'));
 const About = lazy(() => import('./sections/About'));
@@ -101,6 +102,10 @@ function ScrollToTop() {
   useEffect(() => {
     window.history.scrollRestoration = 'manual';
     window.scrollTo(0, 0);
+  }, [pathname]);
+  useEffect(() => {
+    const pageName = pathname === '/' ? 'home' : pathname.replace(/^\//, '').replace(/\//g, '_');
+    trackPageView(pageName);
   }, [pathname]);
   return null;
 }

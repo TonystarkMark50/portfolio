@@ -173,6 +173,29 @@ export default function AdminResume() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [activeSection, setActiveSection] = useState<EditableSection | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const [zoom, setZoom] = useState(100);
+  const [pageCount, setPageCount] = useState(1);
+  const previewRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      const h = contentRef.current.scrollHeight;
+      setPageCount(Math.max(1, Math.ceil(h / 950)));
+    }
+  }, [resumeData, zoom, template]);
+
+  function scrollToTop() {
+    previewRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function openFullPreview() {
+    if (!resumeData) return;
+    const icons = { github: githubIcon as string, linkedin: linkdinIcon as string, location: locationIcon as string, email: emailIcon as string };
+    const blob = await pdf(<ATSResume data={resumeData} icons={icons} template={template} />).toBlob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  }
 
   // ── Data State ──
   const [profile, setProfile] = useState<EditableProfile>({ name: '', title: '', email: '', phone: '', location: '', linkedin: '', github: '' });
@@ -247,7 +270,7 @@ export default function AdminResume() {
       certificateUrl: internships[0].certificate_url || null, completed: internships[0].completed,
     } : null;
     const projItems: ProjectItem[] = projects.map(p => ({
-      name: p.name, type: p.type, status: p.status, completedDate: p.completed_date || null,
+      id: p.id, name: p.name, type: p.type, status: p.status, completedDate: p.completed_date || null,
       highlights: p.highlights, technologies: p.technologies, reportUrl: p.report_url || null,
     }));
     const skillItems: SkillCategory[] = skills.map(s => ({
@@ -289,6 +312,57 @@ export default function AdminResume() {
         if (section === 'template') {
           await supabase.from('site_settings').upsert({ resume_template: template, resume_sections: JSON.stringify(sections) });
         }
+        if (section === 'education') {
+          for (const e of education) {
+            const { error } = await supabase.from('education').upsert({
+              id: e.id, degree: e.degree, field: e.field, institution: e.institution,
+              period: e.period, location: e.location, gpa: e.gpa, status: e.status,
+              current: e.current, description: e.description, display_order: e.display_order,
+            });
+            if (error) throw error;
+          }
+        }
+        if (section === 'internship') {
+          for (const v of internships) {
+            const { error } = await supabase.from('internships').upsert({
+              id: v.id, organization: v.organization, department: v.department, role: v.role,
+              duration: v.duration, location: v.location, type: v.type, description: v.description,
+              responsibilities: v.responsibilities, learnings: v.learnings, impact: v.impact,
+              certificate_url: v.certificate_url, completed: v.completed, display_order: v.display_order,
+            });
+            if (error) throw error;
+          }
+        }
+        if (section === 'projects') {
+          for (const v of projects) {
+            const { error } = await supabase.from('projects').upsert({
+              id: v.id, name: v.name, type: v.type, status: v.status, completed_date: v.completed_date,
+              description: v.description, highlights: v.highlights, technologies: v.technologies,
+              report_url: v.report_url, image_url: v.image_url, github_url: v.github_url,
+              demo_url: v.demo_url, featured: v.featured, display_order: v.display_order,
+            });
+            if (error) throw error;
+          }
+        }
+        if (section === 'skills') {
+          for (const v of skills) {
+            const { error } = await supabase.from('skills').upsert({
+              id: v.id, category: v.category, skills: v.skills, gradient: v.gradient, display_order: v.display_order,
+            });
+            if (error) throw error;
+          }
+        }
+        if (section === 'certifications') {
+          for (const v of certifications) {
+            const { error } = await supabase.from('certifications').upsert({
+              id: v.id, title: v.title, organization: v.organization, platform: v.platform,
+              issue_date: v.issue_date, credential_id: v.credential_id, certificate_url: v.certificate_url,
+              embed_url: v.embed_url, description: v.description, category: v.category, skills: v.skills,
+              status: v.status, logo_url: v.logo_url, display_order: v.display_order,
+            });
+            if (error) throw error;
+          }
+        }
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 2000);
       } catch {
@@ -296,7 +370,7 @@ export default function AdminResume() {
         setTimeout(() => setSaveStatus('idle'), 3000);
       }
     }, 1000);
-  }, [profile, summary, template, sections]);
+  }, [profile, summary, template, sections, education, internships, projects, skills, certifications]);
 
   // ── Profile handlers ──
   const updateProfile = (key: keyof EditableProfile, val: string) => {
@@ -772,32 +846,53 @@ export default function AdminResume() {
         </div>
 
         {/* ── RIGHT PANEL: Live Resume Preview ── */}
-        <div className="xl:col-span-3 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2.5 bg-gray-800/80 border-b border-gray-800">
+        <div className="xl:col-span-3 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col">
+          {/* Sticky Toolbar */}
+          <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
             <div className="flex items-center gap-2">
               <div className="flex gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
                 <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
               </div>
-              <span className="text-[10px] text-gray-400 ml-2">
+              <span className="text-[10px] text-gray-400 ml-1">
                 Live Preview · <span className="text-gray-200 font-medium">{template.charAt(0).toUpperCase() + template.slice(1)}</span>
               </span>
             </div>
-            <Eye className="w-3.5 h-3.5 text-gray-600" />
+            <div className="flex items-center gap-2">
+              <button onClick={() => setZoom(Math.max(50, zoom - 25))} className="px-1.5 py-0.5 rounded text-[10px] text-gray-400 hover:text-white hover:bg-gray-700 transition-colors" title="Zoom out">−</button>
+              <span className="text-[10px] text-gray-400 w-8 text-center tabular-nums">{zoom}%</span>
+              <button onClick={() => setZoom(Math.min(150, zoom + 25))} className="px-1.5 py-0.5 rounded text-[10px] text-gray-400 hover:text-white hover:bg-gray-700 transition-colors" title="Zoom in">+</button>
+              <span className="text-gray-600 text-[10px]">|</span>
+              <span className="text-[10px] text-gray-400 tabular-nums">{pageCount} pg</span>
+              <span className="text-gray-600 text-[10px]">|</span>
+              <button onClick={scrollToTop} className="text-[10px] text-gray-400 hover:text-white transition-colors" title="Scroll to top">Top</button>
+              <button onClick={openFullPreview} className="text-[10px] text-blue-400 hover:text-blue-300 transition-colors" title="Open full preview">Open</button>
+              <button onClick={handleDownloadPdf} className="text-[10px] text-blue-400 hover:text-blue-300 transition-colors" title="Download PDF">PDF</button>
+            </div>
           </div>
-          <div className="flex justify-center bg-gray-100 p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)', minHeight: 600 }}>
+          {/* Scrollable Preview */}
+          <div ref={previewRef} className="flex-1 bg-gray-100 p-6 overflow-y-auto overflow-x-hidden scrollbar-thin" style={{ maxHeight: 'calc(100vh - 300px)', minHeight: 500 }}>
             {resumeData ? (
-              <div className="w-full max-w-[800px] shadow-xl rounded-lg overflow-hidden">
-                <ResumePreview data={resumeData} summary={summary} template={template} sections={sections} />
+              <div className="flex justify-center">
+                <div ref={contentRef} className="w-full max-w-[800px] shadow-xl rounded-lg" style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
+                  <ResumePreview data={resumeData} summary={summary} template={template} sections={sections} />
+                </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-gray-400 text-sm gap-3">
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 text-sm gap-3 min-h-[400px]">
                 <FileText className="w-12 h-12 text-gray-600" />
                 <p>No resume data yet. Edit fields on the left to build your resume.</p>
               </div>
             )}
           </div>
+          <style>{`
+            .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+            .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+            .scrollbar-thin::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+            .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #64748b; }
+            .scrollbar-thin { scrollbar-width: thin; scrollbar-color: #475569 transparent; }
+          `}</style>
         </div>
       </div>
     </div>

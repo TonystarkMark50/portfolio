@@ -72,6 +72,7 @@ export interface CertificationItem {
 }
 
 export interface ProjectItem {
+  id: string;
   name: string;
   type: string;
   status: string;
@@ -221,6 +222,7 @@ export async function loadProjects(): Promise<ProjectItem[] | null> {
   const { data } = await getProjects();
   if (data && data.length > 0) {
     return data.map((p) => ({
+      id: p.id,
       name: p.name,
       type: p.type,
       status: p.status,
