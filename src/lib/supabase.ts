@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { createNotification } from './api';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -9,6 +8,24 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Direct notification insert (avoids circular import with api.ts)
+function insertNotification(notification: {
+  type: string;
+  title: string;
+  message: string;
+  metadata?: Record<string, unknown>;
+}) {
+  supabase.from('notifications').insert({
+    type: notification.type,
+    title: notification.title,
+    message: notification.message,
+    metadata: notification.metadata || null,
+    is_read: false,
+  }).then(({ error }) => {
+    if (error) console.error('Failed to create notification:', error);
+  });
+}
 
 // Contact functions
 export async function submitContactForm(formData: {
@@ -32,12 +49,12 @@ export async function submitContactForm(formData: {
     if (dbError) throw dbError;
 
     // Create notification for admin
-    createNotification({
+    insertNotification({
       type: 'contact',
       title: 'New Contact Message',
       message: `${formData.name} contacted you regarding "${formData.subject}"`,
       metadata: { name: formData.name, email: formData.email, subject: formData.subject },
-    }).catch(err => console.error('Failed to create notification:', err));
+    });
 
     return { success: true };
   } catch (error) {
