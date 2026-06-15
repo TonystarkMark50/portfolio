@@ -5,7 +5,7 @@ import { loadProjects } from '../lib/loaders';
 
 export default function Projects() {
   const { data: projects } = useSupabaseData(loadProjects);
-  const project = projects[0];
+  const project = projects?.[0];
   if (!project) return null;
   const technologies = project.technologies;
   const highlights = project.highlights;
