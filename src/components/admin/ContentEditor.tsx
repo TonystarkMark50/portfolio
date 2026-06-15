@@ -1,5 +1,5 @@
 import { useState, useEffect, ReactNode, useRef, useCallback } from 'react';
-import { Monitor, Tablet, Smartphone, Check, Clock, AlertTriangle, Loader2, Save, Globe } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, Check, Clock, AlertTriangle, Loader2, Save, Globe, ExternalLink } from 'lucide-react';
 import Hero from '../../sections/Hero';
 import About from '../../sections/About';
 import Skills from '../../sections/Skills';
@@ -102,6 +102,8 @@ export function useAutoSave(saveFn: () => Promise<void>, deps: any[]) {
   const [status, setStatus] = useState<SaveStatus>('idle');
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
   const mountedRef = useRef(true);
+  const saveRef = useRef(saveFn);
+  saveRef.current = saveFn;
 
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
@@ -111,24 +113,24 @@ export function useAutoSave(saveFn: () => Promise<void>, deps: any[]) {
     timerRef.current = setTimeout(async () => {
       setStatus('saving');
       try {
-        await saveFn();
+        await saveRef.current();
         if (mountedRef.current) setStatus('saved');
       } catch {
         if (mountedRef.current) setStatus('error');
       }
     }, 1500);
-  }, deps);
+  }, []);
 
   const saveNow = useCallback(async () => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setStatus('saving');
     try {
-      await saveFn();
+      await saveRef.current();
       if (mountedRef.current) setStatus('saved');
     } catch {
       if (mountedRef.current) setStatus('error');
     }
-  }, deps);
+  }, []);
 
   return { status, triggerSave, saveNow };
 }
@@ -152,13 +154,18 @@ export default function ContentEditor({
 }) {
   const [device, setDevice] = useState<DeviceType>('desktop');
   const [showFullWebsite, setShowFullWebsite] = useState(false);
+  const [previewKey, setPreviewKey] = useState(0);
   const siteUrl = window.location.origin;
   const cfg = deviceConfig[device];
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const prevStatusRef = useRef(status);
 
   useEffect(() => {
-    if (status !== 'saved') return;
+    const prev = prevStatusRef.current;
+    prevStatusRef.current = status;
+    if (prev !== 'saving' || status !== 'saved') return;
     const t = setTimeout(() => {
+      setPreviewKey(k => k + 1);
       try {
         iframeRef.current?.contentWindow?.location.reload();
       } catch {}
@@ -224,7 +231,7 @@ export default function ContentEditor({
             <div className="transition-all duration-300 overflow-hidden rounded-lg border border-gray-800 bg-white" style={{ width: cfg.width > 700 ? '100%' : cfg.width, maxWidth: '100%' }}>
               {section && !showFullWebsite ? (
                 <div className="w-full overflow-y-auto" style={{ height: 450, maxHeight: '55vh' }}>
-                  <SectionPreviewRenderer section={section} />
+                  <SectionPreviewRenderer key={previewKey} section={section} />
                 </div>
               ) : (
                 <iframe ref={iframeRef} src={siteUrl} title="Live Preview" className="w-full bg-white" style={{ height: 450, maxHeight: '55vh' }} />
@@ -386,5 +393,63 @@ export function InlineBool({
       <input type="checkbox" checked={value} onChange={e => onSave(e.target.checked)} className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500/30" />
       {label && <span className="text-xs text-gray-300 group-hover:text-white transition-colors">{label}</span>}
     </label>
+  );
+}
+
+export function InlineUrlButton({
+  value,
+  onSave,
+  label,
+}: {
+  value: string;
+  onSave: (val: string) => void;
+  label?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { setDraft(value); }, [value]);
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  function handleSave() {
+    if (draft !== value) onSave(draft);
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div>
+        {label && <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{label}</p>}
+        <input ref={inputRef} type="url" value={draft} onChange={e => setDraft(e.target.value)} onBlur={handleSave} onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') { setDraft(value); setEditing(false); } }} className="w-full px-2 py-1.5 rounded-lg bg-gray-800 border border-blue-500 text-white text-xs outline-none" autoFocus placeholder="https://..." />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {label && <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5">{label}</p>}
+      {value ? (
+        <div className="flex items-center gap-2">
+          <a href={value} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-medium hover:bg-blue-500/20 transition-colors border border-blue-500/20">
+            <ExternalLink className="w-3 h-3" />
+            View Certificate
+          </a>
+          <button onClick={() => { setEditing(true); setDraft(value); }} className="p-1 rounded-lg hover:bg-gray-800 text-gray-500 hover:text-gray-300 transition-colors" title="Edit URL">
+            ✎
+          </button>
+        </div>
+      ) : (
+        <div className="group cursor-pointer" onClick={() => setEditing(true)}>
+          <span className="text-xs text-gray-500 italic">Click to set certificate link...</span>
+          <span className="text-[10px] text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity ml-1">✎</span>
+        </div>
+      )}
+    </div>
   );
 }

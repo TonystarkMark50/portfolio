@@ -82,20 +82,15 @@ export default function Projects() {
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <ListChecks className="w-5 h-5 text-violet-500" />
-                    <h4 className="text-lg font-semibold text-theme-primary">Responsibilities</h4>
+                {project.description && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <ListChecks className="w-5 h-5 text-violet-500" />
+                      <h4 className="text-lg font-semibold text-theme-primary">Description</h4>
+                    </div>
+                    <p className="text-sm text-theme-secondary leading-relaxed">{project.description}</p>
                   </div>
-                  <ul className="space-y-2.5">
-                    {highlights.map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-theme-secondary">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0 mt-1.5" />
-                        <span className="text-sm font-medium">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                )}
               </div>
             </div>
 

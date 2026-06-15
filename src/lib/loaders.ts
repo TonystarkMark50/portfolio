@@ -232,6 +232,33 @@ export async function loadProjects(): Promise<ProjectItem[] | null> {
   return null;
 }
 
+export interface JourneyMilestone {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  date: string | null;
+  type: string;
+  icon: string;
+}
+
+export async function loadJourneyMilestones(): Promise<JourneyMilestone[] | null> {
+  const { supabase } = await import('./supabase');
+  const { data } = await supabase.from('journey').select('*').order('display_order');
+  if (data && data.length > 0) {
+    return data.map((j: any) => ({
+      id: j.id,
+      title: j.title,
+      subtitle: j.subtitle || '',
+      description: j.description || '',
+      date: j.date || '',
+      type: j.type || 'milestone',
+      icon: j.icon || 'Star',
+    }));
+  }
+  return null;
+}
+
 export async function loadContactInfo(): Promise<{ email: string; location: string; linkedin: string; github: string } | null> {
   const { data } = await getContactInfo();
   if (data) {

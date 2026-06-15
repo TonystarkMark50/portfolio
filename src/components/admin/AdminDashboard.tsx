@@ -82,6 +82,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDesc, setSeoDesc] = useState('');
   const [saving, setSaving] = useState(false);
+  const [mediaItems, setMediaItems] = useState<{ name: string; url: string }[]>([]);
 
   useEffect(() => { loadAll(); }, []);
 
@@ -112,6 +113,18 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
 
     const { data: msgs } = await supabase.from('contact_submissions').select('id, name, subject, status, created_at').order('created_at', { ascending: false }).limit(5);
     if (msgs) setMessages(msgs);
+
+    const allMedia: { name: string; url: string }[] = [];
+    for (const bucket of ['certification-logos', 'project-images', 'resume-assets']) {
+      const { data: files } = await supabase.storage.from(bucket).list();
+      if (files) {
+        for (const f of files) {
+          const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(f.name);
+          allMedia.push({ name: f.name, url: publicUrl });
+        }
+      }
+    }
+    setMediaItems(allMedia.slice(0, 8));
 
     setLoading(false);
   }
@@ -650,35 +663,43 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
           </div>
         </div>
 
-        {/* Media Library */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2.5">
-              <Image className="w-4 h-4 text-blue-400" />
-              <div>
-                <h3 className="text-sm font-semibold text-white">Media Library</h3>
-                <p className="text-[10px] text-gray-500">Upload and manage assets</p>
+          {/* Media Library */}
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <Image className="w-4 h-4 text-blue-400" />
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Media Library</h3>
+                  <p className="text-[10px] text-gray-500">Upload and manage assets</p>
+                </div>
               </div>
+              <button onClick={() => onNavigate?.('media')} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors shadow-sm">
+                <Upload className="w-3.5 h-3.5" /> Upload
+              </button>
             </div>
-            <button onClick={() => onNavigate?.('media')} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors shadow-sm">
-              <Upload className="w-3.5 h-3.5" /> Upload
-            </button>
-          </div>
-          <div className="grid grid-cols-4 gap-2 mb-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-              <div key={i} className="aspect-square rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-600 hover:border-gray-600 transition-colors cursor-pointer">
-                {i <= 2 ? (
-                  <img src={`https://picsum.photos/seed/asset${i}/200/200`} alt="" className="w-full h-full object-cover rounded-lg" />
-                ) : (
-                  <Image className="w-5 h-5" />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-500">8 assets · 2.4 MB</span>
-            <NavBtn tab="media" label="Open library" />
-          </div>
+            <div className="grid grid-cols-4 gap-2 mb-4">
+              {mediaItems.length > 0 ? mediaItems.slice(0, 8).map(item => (
+                <div key={item.name} className="aspect-square rounded-lg bg-gray-800 border border-gray-700 overflow-hidden hover:border-gray-600 transition-colors cursor-pointer">
+                  {/\.(png|jpg|jpeg|gif|webp|svg)$/i.test(item.name) ? (
+                    <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-600">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                  )}
+                </div>
+              )) : (
+                [...Array(4)].map((_, i) => (
+                  <div key={i} className="aspect-square rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-600">
+                    <Image className="w-5 h-5" />
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-500">{mediaItems.length} asset{mediaItems.length !== 1 ? 's' : ''}</span>
+              <NavBtn tab="media" label="Open library" />
+            </div>
         </div>
       </div>
 

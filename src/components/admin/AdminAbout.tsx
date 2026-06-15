@@ -15,12 +15,18 @@ export default function AdminAbout() {
     setLoading(false);
   }
 
-  const save = async () => {};
-  const { status } = useAutoSave(save, []);
+  const save = async () => {
+    for (const item of items) {
+      const { error } = await upsertAbout(item);
+      if (error) throw error;
+    }
+  };
+
+  const { status, triggerSave } = useAutoSave(save, [items]);
 
   async function updateField(id: string, key: keyof About, val: any) {
-    await upsertAbout({ id, [key]: val } as any);
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
+    triggerSave();
   }
 
   async function addEntry() {

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Mail, Search, Inbox, Archive, ExternalLink, MessageSquare, Trash2, Filter, Check, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import ContentEditor, { useAutoSave } from './ContentEditor';
 
 interface Contact {
   id: string; name: string; email: string; subject: string; message: string;
@@ -35,8 +34,6 @@ export default function AdminContacts() {
     if (selected === id) setSelected(null);
     load();
   }
-
-  const { status: saveStatus } = useAutoSave(async () => {}, []);
 
   const filtered = contacts.filter(c => {
     if (statusFilter !== 'all' && c.status !== statusFilter) return false;

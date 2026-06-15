@@ -24,11 +24,18 @@ export default function AdminProjects() {
     setLoading(false);
   }
 
-  const { status } = useAutoSave(async () => {}, []);
+  const save = async () => {
+    for (const item of items) {
+      const { error } = await supabase.from('projects').upsert(item).select().maybeSingle();
+      if (error) throw error;
+    }
+  };
+
+  const { status, triggerSave } = useAutoSave(save, [items]);
 
   async function updateField(id: string, key: keyof Project, val: any) {
-    await supabase.from('projects').update({ [key]: val }).eq('id', id);
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
+    triggerSave();
   }
 
   async function addProject() {

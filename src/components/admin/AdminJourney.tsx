@@ -25,11 +25,18 @@ export default function AdminJourney() {
     setLoading(false);
   }
 
-  const { status } = useAutoSave(async () => {}, []);
+  const save = async () => {
+    for (const item of items) {
+      const { error } = await upsertJourneyEntry(item);
+      if (error) throw error;
+    }
+  };
+
+  const { status, triggerSave } = useAutoSave(save, [items]);
 
   async function updateField(id: string, key: keyof Journey, val: any) {
-    await upsertJourneyEntry({ id, [key]: val } as any);
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
+    triggerSave();
   }
 
   async function addEntry() {

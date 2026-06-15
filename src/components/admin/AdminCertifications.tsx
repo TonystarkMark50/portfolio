@@ -3,7 +3,7 @@ import { Plus, Trash2, Award, Upload, ShieldCheck, ShieldAlert, Image as ImageIc
 import { getCertifications, upsertCertification, deleteCertification, Certification } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
-import ContentEditor, { InlineField, InlineTags, useAutoSave } from './ContentEditor';
+import ContentEditor, { InlineField, InlineTags, InlineUrlButton, useAutoSave } from './ContentEditor';
 
 const LOGO_BUCKET = 'certification-logos';
 
@@ -22,11 +22,18 @@ export default function AdminCertifications() {
     setLoading(false);
   }
 
-  const { status } = useAutoSave(async () => {}, []);
+  const save = async () => {
+    for (const item of items) {
+      const { error } = await upsertCertification(item);
+      if (error) throw error;
+    }
+  };
+
+  const { status, triggerSave } = useAutoSave(save, [items]);
 
   async function updateField(id: string, key: keyof Certification, val: any) {
-    await upsertCertification({ id, [key]: val } as any);
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
+    triggerSave();
   }
 
   async function addCert() {
@@ -102,7 +109,7 @@ export default function AdminCertifications() {
             <InlineField value={item.platform || ''} onSave={v => updateField(item.id, 'platform', v)} placeholder="Platform" label="Platform" />
             <InlineField value={item.issue_date || ''} onSave={v => updateField(item.id, 'issue_date', v)} placeholder="2025" label="Issue Date" />
           </div>
-          <InlineField value={item.certificate_url || ''} onSave={v => updateField(item.id, 'certificate_url', v)} type="url" placeholder="https://..." label="Certificate URL" />
+          <InlineUrlButton value={item.certificate_url || ''} onSave={v => updateField(item.id, 'certificate_url', v)} label="Certificate Link" />
           <InlineField value={item.credential_id || ''} onSave={v => updateField(item.id, 'credential_id', v)} placeholder="Credential ID" label="Credential ID" />
           <InlineTags tags={item.skills || []} onSave={v => updateField(item.id, 'skills', v)} label="Skills" />
         </div>

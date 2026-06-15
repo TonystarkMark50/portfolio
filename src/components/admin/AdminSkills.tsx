@@ -18,11 +18,18 @@ export default function AdminSkills() {
     setLoading(false);
   }
 
-  const { status } = useAutoSave(async () => {}, []);
+  const save = async () => {
+    for (const item of items) {
+      const { error } = await upsertSkill(item);
+      if (error) throw error;
+    }
+  };
+
+  const { status, triggerSave } = useAutoSave(save, [items]);
 
   async function updateField(id: string, key: keyof Skill, val: any) {
-    await upsertSkill({ id, [key]: val } as any);
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
+    triggerSave();
   }
 
   async function addCategory() {

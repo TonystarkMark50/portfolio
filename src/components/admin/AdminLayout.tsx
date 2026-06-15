@@ -1,11 +1,12 @@
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, useRef } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import {
   LayoutDashboard, User, BookOpen, Code2, Briefcase, GraduationCap, Award,
   Map, Mail, Settings, ArrowLeft, LogOut, FileText, Image, Search,
   ChevronLeft, ChevronRight, Bell, BarChart3, Globe, ExternalLink,
-  Clock, Circle, Zap, RefreshCw
+  Clock, Circle, Zap, RefreshCw, CheckCheck
 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 import CommandPalette from './CommandPalette';
 
 export type AdminTab =
@@ -69,6 +70,63 @@ export default function AdminLayout({
   const [collapsed, setCollapsed] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
+  const [notifications, setNotifications] = useState<{ id: string; text: string; time: string; icon: any; read: boolean }[]>([]);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function loadNotifications() {
+    const { data: msgs } = await supabase
+      .from('contact_submissions')
+      .select('id, name, created_at, status')
+      .order('created_at', { ascending: false })
+      .limit(5);
+    if (msgs) {
+      const newCount = msgs.filter(m => m.status === 'new').length;
+      setUnreadNotifs(newCount);
+      setNotifications(msgs.map(m => ({
+        id: m.id,
+        text: `New message from ${m.name}`,
+        time: formatTimeAgo(m.created_at),
+        icon: Mail,
+        read: m.status !== 'new',
+      })));
+    }
+  }
+
+  function formatTimeAgo(date: string) {
+    const diff = Date.now() - new Date(date).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+  }
+
+  async function markAllRead() {
+    const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
+    if (unreadIds.length === 0) return;
+    await supabase.from('contact_submissions').update({ status: 'read' }).in('id', unreadIds);
+    setUnreadNotifs(0);
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  }
+
+  useEffect(() => {
+    if (!showNotifs) return;
+    function handleClick(e: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifs(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showNotifs]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -169,23 +227,31 @@ export default function AdminLayout({
             <StatusDot label="Netlify" />
             <CurrentTime />
 
-            <div className="relative">
+            <div className="relative" ref={notifRef}>
               <button onClick={() => setShowNotifs(!showNotifs)} className="relative p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-gray-200 transition-colors">
                 <Bell className="w-4 h-4" />
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center">3</span>
+                {unreadNotifs > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center">{unreadNotifs}</span>
+                )}
               </button>
               {showNotifs && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl shadow-black/50 overflow-hidden">
-                  <div className="p-3 border-b border-gray-800">
+                <div className="absolute right-0 top-full mt-2 w-80 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50">
+                  <div className="p-3 border-b border-gray-800 flex items-center justify-between">
                     <p className="text-xs font-semibold text-gray-200">Notifications</p>
+                    {unreadNotifs > 0 && (
+                      <button onClick={markAllRead} className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors">
+                        <CheckCheck className="w-3 h-3" /> Mark all read
+                      </button>
+                    )}
                   </div>
                   <div className="max-h-64 overflow-y-auto">
-                    {[
-                      { text: 'Deployment successful', time: '2 min ago', icon: RefreshCw },
-                      { text: 'New message from visitor', time: '15 min ago', icon: Mail },
-                      { text: 'Resume generated', time: '1 hour ago', icon: FileText },
-                    ].map((n, i) => (
-                      <div key={i} className="flex items-start gap-3 p-3 hover:bg-gray-800 transition-colors cursor-pointer border-b border-gray-800 last:border-0">
+                    {notifications.length === 0 ? (
+                      <div className="p-6 text-center text-gray-500 text-xs">
+                        <Bell className="w-8 h-8 mx-auto mb-2 text-gray-600" />
+                        <p>No notifications</p>
+                      </div>
+                    ) : notifications.map(n => (
+                      <div key={n.id} className={`flex items-start gap-3 p-3 hover:bg-gray-800 transition-colors cursor-pointer border-b border-gray-800 last:border-0 ${n.read ? 'opacity-60' : ''}`}>
                         <div className="w-7 h-7 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
                           <n.icon className="w-3.5 h-3.5 text-blue-400" />
                         </div>
@@ -193,6 +259,7 @@ export default function AdminLayout({
                           <p className="text-xs text-gray-200">{n.text}</p>
                           <p className="text-[10px] text-gray-500">{n.time}</p>
                         </div>
+                        {!n.read && <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0 mt-1" />}
                       </div>
                     ))}
                   </div>
