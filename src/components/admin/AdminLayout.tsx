@@ -1,12 +1,18 @@
-import { ReactNode, useState, useEffect, useRef } from 'react';
+import { ReactNode, useState, useEffect, useRef, useCallback } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import {
   LayoutDashboard, User, BookOpen, Code2, Briefcase, GraduationCap, Award,
   Map, Mail, Settings, LogOut, FileText, Image, Search,
   ChevronLeft, ChevronRight, Bell, BarChart3, ExternalLink,
-  Clock, Zap, CheckCheck, Trash2, X
+  Clock, Zap, CheckCheck, Trash2, X, MessageSquare, Download, FolderPlus, AwardIcon
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import {
+  getNotifications, getUnreadNotificationCount,
+  markNotificationRead, markAllNotificationsRead,
+  deleteNotificationById, deleteAllNotifications, createNotification,
+  type Notification,
+} from '../../lib/api';
 import CommandPalette from './CommandPalette';
 import ConfirmationModal from '../ConfirmationModal';
 import type { ConfirmAction } from '../ConfirmationModal';
@@ -72,8 +78,8 @@ export default function AdminLayout({
   const [collapsed, setCollapsed] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
-  const [unreadNotifs, setUnreadNotifs] = useState(0);
-  const [notifications, setNotifications] = useState<{ id: string; text: string; time: string; icon: any; read: boolean }[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const notifRef = useRef<HTMLDivElement>(null);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   const toastTimeout = useRef<ReturnType<typeof setTimeout>>();
@@ -85,83 +91,66 @@ export default function AdminLayout({
     toastTimeout.current = setTimeout(() => setToast(null), 4000);
   }
 
+  const loadNotifications = useCallback(async () => {
+    const [notifRes, unreadRes] = await Promise.all([
+      getNotifications(30),
+      getUnreadNotificationCount(),
+    ]);
+    if (notifRes.data) setNotifications(notifRes.data);
+    setUnreadCount(unreadRes);
+  }, []);
+
   useEffect(() => {
     loadNotifications();
-    const interval = setInterval(loadNotifications, 30000);
-    const sub = supabase
-      .channel('notifications_changes')
+    const channel = supabase
+      .channel('notifications-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
         loadNotifications();
       })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'contact_submissions' }, () => {
-        loadNotifications();
-      })
       .subscribe();
-    return () => { clearInterval(interval); sub.unsubscribe(); };
-  }, []);
+    return () => { supabase.removeChannel(channel); };
+  }, [loadNotifications]);
 
-  async function loadNotifications() {
-    const [notifRes, countRes, msgsRes] = await Promise.all([
-      supabase.from('notifications').select('id, title, message, is_read, created_at').order('created_at', { ascending: false }).limit(20),
-      supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('is_read', false),
-      supabase.from('contact_submissions').select('id, name, created_at, is_read').order('created_at', { ascending: false }).limit(5)
-    ]);
-
-    const allNotifications: { id: string; text: string; time: string; icon: any; read: boolean }[] = [];
-
-    if (notifRes.data) {
-      allNotifications.push(...notifRes.data.map(n => ({
-        id: n.id,
-        text: n.message,
-        time: formatTimeAgo(n.created_at),
-        icon: Bell,
-        read: n.is_read,
-      })));
-    }
-
-    if (msgsRes.data) {
-      allNotifications.push(...msgsRes.data.map(m => ({
-        id: m.id,
-        text: `New message from ${m.name}`,
-        time: formatTimeAgo(m.created_at),
-        icon: Mail,
-        read: m.is_read,
-      })));
-    }
-
-    allNotifications.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-    setNotifications(allNotifications.slice(0, 20));
-
-    const notifUnread = countRes.count || 0;
-    const msgUnread = msgsRes.data?.filter(m => !m.is_read).length || 0;
-    setUnreadNotifs(notifUnread + msgUnread);
-  }
-
-  function formatTimeAgo(date: string) {
-    const diff = Date.now() - new Date(date).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'just now';
+  function formatTimeAgo(dateStr: string) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const secs = Math.floor(diff / 1000);
+    if (secs < 60) return 'just now';
+    const mins = Math.floor(secs / 60);
     if (mins < 60) return `${mins}m ago`;
     const hrs = Math.floor(mins / 60);
     if (hrs < 24) return `${hrs}h ago`;
     return `${Math.floor(hrs / 24)}d ago`;
   }
 
-  async function markAllRead() {
-    const { error } = await supabase.from('contact_submissions').update({ is_read: true }).eq('is_read', false);
+  function getNotifIcon(type: string) {
+    switch (type) {
+      case 'contact': return MessageSquare;
+      case 'download': return Download;
+      case 'project': return FolderPlus;
+      case 'certification': return AwardIcon;
+      default: return Bell;
+    }
+  }
+
+  async function handleMarkAsRead(id: string) {
+    const notif = notifications.find(n => n.id === id);
+    if (notif && !notif.is_read) {
+      const { error } = await markNotificationRead(id);
+      if (!error) {
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    }
+  }
+
+  async function handleMarkAllRead() {
+    const { error } = await markAllNotificationsRead();
     if (error) { showToast('Failed to mark all as read'); return; }
-    setUnreadNotifs(0);
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    setUnreadCount(0);
   }
 
-  async function markAsRead(id: string) {
-    const { error } = await supabase.from('contact_submissions').update({ is_read: true }).eq('id', id);
-    if (error) { showToast('Failed to mark notification as read'); return; }
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-    setUnreadNotifs(prev => Math.max(0, prev - 1));
-  }
-
-  function deleteNotification(e: React.MouseEvent, id: string) {
+  function handleDeleteNotification(e: React.MouseEvent, id: string) {
     e.stopPropagation();
     setConfirm({
       open: true,
@@ -173,15 +162,17 @@ export default function AdminLayout({
         icon: 'trash',
       },
       onConfirm: async () => {
-        const { error } = await supabase.from('contact_submissions').delete().eq('id', id);
+        const { error } = await deleteNotificationById(id);
         if (error) { showToast('Failed to delete notification'); return; }
         setNotifications(prev => prev.filter(n => n.id !== id));
-        loadNotifications();
+        if (!notifications.find(n => n.id === id)?.is_read) {
+          setUnreadCount(prev => Math.max(0, prev - 1));
+        }
       },
     });
   }
 
-  function clearAll() {
+  function handleClearAll() {
     setConfirm({
       open: true,
       action: {
@@ -192,10 +183,10 @@ export default function AdminLayout({
         icon: 'trash',
       },
       onConfirm: async () => {
-        const { error } = await supabase.from('contact_submissions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        const { error } = await deleteAllNotifications();
         if (error) { showToast('Failed to clear notifications'); return; }
         setNotifications([]);
-        setUnreadNotifs(0);
+        setUnreadCount(0);
       },
     });
   }
@@ -335,8 +326,8 @@ export default function AdminLayout({
             <div className="relative" ref={notifRef}>
               <button onClick={() => setShowNotifs(!showNotifs)} className="relative p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-gray-200 transition-colors">
                 <Bell className="w-4 h-4" />
-                {unreadNotifs > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center">{unreadNotifs}</span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center px-1">{unreadCount > 99 ? '99+' : unreadCount}</span>
                 )}
               </button>
               {showNotifs && (
@@ -345,40 +336,54 @@ export default function AdminLayout({
                     <p className="text-xs font-semibold text-gray-200">Notifications</p>
                     <div className="flex items-center gap-2">
                       {notifications.length > 0 && (
-                        <button onClick={clearAll} className="flex items-center gap-1 text-[10px] text-red-400 hover:text-red-300 transition-colors">
+                        <button onClick={handleClearAll} className="flex items-center gap-1 text-[10px] text-red-400 hover:text-red-300 transition-colors">
                           <Trash2 className="w-3 h-3" /> Clear all
                         </button>
                       )}
-                      {unreadNotifs > 0 && (
-                        <button onClick={markAllRead} className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors">
+                      {unreadCount > 0 && (
+                        <button onClick={handleMarkAllRead} className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors">
                           <CheckCheck className="w-3 h-3" /> Mark all read
                         </button>
                       )}
                     </div>
                   </div>
-                  <div className="max-h-64 overflow-y-auto">
+                  <div className="max-h-80 overflow-y-auto">
                     {notifications.length === 0 ? (
-                      <div className="p-6 text-center text-gray-500 text-xs">
+                      <div className="p-8 text-center text-gray-500 text-xs">
                         <Bell className="w-8 h-8 mx-auto mb-2 text-gray-600" />
                         <p>No notifications</p>
                       </div>
-                    ) : notifications.map(n => (
-                      <div key={n.id} onClick={() => { markAsRead(n.id); onTabChange('contact'); }} className={`group flex items-start gap-3 p-3 hover:bg-gray-800 transition-colors cursor-pointer border-b border-gray-800 last:border-0 ${n.read ? 'opacity-60' : ''}`}>
-                        <div className="w-7 h-7 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
-                          <n.icon className="w-3.5 h-3.5 text-blue-400" />
+                    ) : notifications.map(n => {
+                      const Icon = getNotifIcon(n.type);
+                      return (
+                        <div key={n.id} onClick={() => handleMarkAsRead(n.id)} className={`group flex items-start gap-3 p-3 hover:bg-gray-800/50 transition-colors cursor-pointer border-b border-gray-800/50 last:border-0 ${n.is_read ? 'opacity-60' : ''}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                            n.type === 'contact' ? 'bg-blue-500/10' :
+                            n.type === 'download' ? 'bg-emerald-500/10' :
+                            n.type === 'project' ? 'bg-purple-500/10' :
+                            'bg-amber-500/10'
+                          }`}>
+                            <Icon className={`w-4 h-4 ${
+                              n.type === 'contact' ? 'text-blue-400' :
+                              n.type === 'download' ? 'text-emerald-400' :
+                              n.type === 'project' ? 'text-purple-400' :
+                              'text-amber-400'
+                            }`} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[11px] font-medium text-gray-200 leading-tight">{n.title}</p>
+                            <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{n.message}</p>
+                            <p className="text-[10px] text-gray-600 mt-1">{formatTimeAgo(n.created_at)}</p>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {!n.is_read && <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0 mt-1" />}
+                            <button onClick={(e) => handleDeleteNotification(e, n.id)} className="p-1 rounded hover:bg-gray-700 text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs text-gray-200">{n.text}</p>
-                          <p className="text-[10px] text-gray-500">{n.time}</p>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          {!n.read && <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0 mt-1" />}
-                          <button onClick={(e) => deleteNotification(e, n.id)} className="p-1 rounded hover:bg-gray-700 text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

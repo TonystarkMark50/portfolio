@@ -130,6 +130,16 @@ export interface SiteSettings {
   theme: string;
 }
 
+export interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  metadata: Record<string, unknown> | null;
+  is_read: boolean;
+  created_at: string;
+}
+
 // ============================================================
 // Generic helpers
 // ============================================================
@@ -304,4 +314,77 @@ export async function getSiteSettings() {
 
 export async function upsertSiteSettings(settings: Partial<SiteSettings>) {
   return upsert<SiteSettings>('site_settings', settings);
+}
+
+// ============================================================
+// Notifications
+// ============================================================
+
+export async function createNotification(notification: {
+  type: string;
+  title: string;
+  message: string;
+  metadata?: Record<string, unknown>;
+}): Promise<ApiResult<Notification>> {
+  const { data, error } = await supabase
+    .from('notifications')
+    .insert({
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      metadata: notification.metadata || null,
+      is_read: false,
+    })
+    .select()
+    .maybeSingle();
+  return { data: data as Notification | null, error };
+}
+
+export async function getNotifications(limit = 50): Promise<ApiResult<Notification[]>> {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  return { data: data as Notification[] | null, error };
+}
+
+export async function getUnreadNotificationCount(): Promise<number> {
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_read', false);
+  return error ? 0 : (count || 0);
+}
+
+export async function markNotificationRead(id: string): Promise<{ error: PostgrestError | null }> {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('id', id);
+  return { error };
+}
+
+export async function markAllNotificationsRead(): Promise<{ error: PostgrestError | null }> {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('is_read', false);
+  return { error };
+}
+
+export async function deleteNotificationById(id: string): Promise<{ error: PostgrestError | null }> {
+  const { error } = await supabase
+    .from('notifications')
+    .delete()
+    .eq('id', id);
+  return { error };
+}
+
+export async function deleteAllNotifications(): Promise<{ error: PostgrestError | null }> {
+  const { error } = await supabase
+    .from('notifications')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000');
+  return { error };
 }

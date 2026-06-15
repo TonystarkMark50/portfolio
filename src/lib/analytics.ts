@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { createNotification } from './api';
 
 const VISITOR_ID_KEY = 'portfolio_visitor_id';
 const GEO_KEY = 'portfolio_geo_cache';
@@ -102,6 +103,13 @@ export async function trackResumeDownload(): Promise<void> {
       user_agent: navigator.userAgent,
       referrer: document.referrer || 'direct',
     });
+
+    createNotification({
+      type: 'download',
+      title: 'Resume Downloaded',
+      message: `A visitor from ${geo.city}, ${geo.country} downloaded your resume`,
+      metadata: { device_type: deviceType, country: geo.country, city: geo.city },
+    }).catch(err => console.error('Failed to create notification:', err));
   } catch (err) {
     console.error('trackResumeDownload error:', err);
   }
