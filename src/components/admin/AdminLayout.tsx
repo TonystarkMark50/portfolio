@@ -77,7 +77,13 @@ export default function AdminLayout({
   useEffect(() => {
     loadNotifications();
     const interval = setInterval(loadNotifications, 30000);
-    return () => clearInterval(interval);
+    const sub = supabase
+      .channel('contact_submissions_notif')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_submissions' }, () => {
+        loadNotifications();
+      })
+      .subscribe();
+    return () => { clearInterval(interval); sub.unsubscribe(); };
   }, []);
 
   async function loadNotifications() {

@@ -15,7 +15,16 @@ export default function AdminContacts() {
   const [selected, setSelected] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const sub = supabase
+      .channel('contact_submissions_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_submissions' }, () => {
+        load();
+      })
+      .subscribe();
+    return () => { sub.unsubscribe(); };
+  }, []);
 
   async function load() {
     const { data } = await supabase.from('contact_submissions').select('*').order('created_at', { ascending: false });

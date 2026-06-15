@@ -3,6 +3,7 @@ import { Send, Mail, MapPin, Clock, ArrowRight, Github, Linkedin, Sparkles, Chec
 import Section from '../components/Section';
 import { useSupabaseData } from '../hooks/usePortfolioData';
 import { loadContactInfo } from '../lib/loaders';
+import { submitContactForm } from '../lib/supabase';
 
 const WEB3FORMS_ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || '';
 const WEB3FORMS_URL = 'https://api.web3forms.com/submit';
@@ -112,6 +113,7 @@ export default function Contact() {
       setSubmitStatus('success');
       setFormData({ name: '', email: '', subject: '', message: '' });
       setErrors({});
+      submitContactForm({ name: formData.name, email: formData.email, subject: formData.subject, message: formData.message });
     } catch {
       setSubmitStatus('error');
     } finally {
