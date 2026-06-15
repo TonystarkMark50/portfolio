@@ -1,7 +1,6 @@
 import { GraduationCap, BookOpen, Award, Calendar, MapPin } from 'lucide-react';
 import { useIntersectionObserver } from '../hooks/useScroll';
-import { educationData as fallbackData } from '../data/portfolio';
-import { useData } from '../hooks/usePortfolioData';
+import { useSupabaseData } from '../hooks/usePortfolioData';
 import { loadEducation } from '../lib/loaders';
 
 const getIcon = (id: number) => {
@@ -13,7 +12,8 @@ const getIcon = (id: number) => {
 
 export default function Education() {
   const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1 });
-  const educationData = useData(loadEducation, fallbackData as any);
+  const { data: educationData } = useSupabaseData(loadEducation);
+  if (!educationData) return null;
 
   return (
     <section

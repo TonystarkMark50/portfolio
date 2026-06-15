@@ -4,13 +4,13 @@ import {
   Clock, Award, ShieldCheck
 } from 'lucide-react';
 import { useIntersectionObserver } from '../hooks/useScroll';
-import { internshipData as fallbackData } from '../data/portfolio';
-import { useData } from '../hooks/usePortfolioData';
+import { useSupabaseData } from '../hooks/usePortfolioData';
 import { loadInternships } from '../lib/loaders';
 
 export default function Internship() {
   const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1 });
-  const internshipData = useData(loadInternships, fallbackData);
+  const { data: internshipData } = useSupabaseData(loadInternships);
+  if (!internshipData) return null;
 
   return (
     <section

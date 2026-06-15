@@ -92,7 +92,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
     ] = await Promise.all([
       getProfile(), getProjects(), getCertifications(), getEducation(), getSkills(), getInternships(),
       supabase.from('admin_audit_log').select('*').order('created_at', { ascending: false }).limit(10),
-      supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('status', 'new'),
+      supabase.from('contact_submissions').select('*', { count: 'exact', head: true }).eq('status', 'new'),
       supabase.from('site_settings').select('*').limit(1).maybeSingle(),
     ]);
     setProfile(pRes.data);
@@ -110,7 +110,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
       setSeoDesc(s.seo_description || '');
     }
 
-    const { data: msgs } = await supabase.from('contact_messages').select('id, name, subject, status, created_at').order('created_at', { ascending: false }).limit(5);
+    const { data: msgs } = await supabase.from('contact_submissions').select('id, name, subject, status, created_at').order('created_at', { ascending: false }).limit(5);
     if (msgs) setMessages(msgs);
 
     setLoading(false);

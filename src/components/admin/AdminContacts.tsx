@@ -19,19 +19,19 @@ export default function AdminContacts() {
   useEffect(() => { load(); }, []);
 
   async function load() {
-    const { data } = await supabase.from('contact_messages').select('*').order('created_at', { ascending: false });
+    const { data } = await supabase.from('contact_submissions').select('*').order('created_at', { ascending: false });
     if (data) setContacts(data);
     setLoading(false);
   }
 
   async function updateStatus(id: string, status: string) {
-    await supabase.from('contact_messages').update({ status }).eq('id', id);
+    await supabase.from('contact_submissions').update({ status }).eq('id', id);
     load();
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this message?')) return;
-    await supabase.from('contact_messages').delete().eq('id', id);
+    await supabase.from('contact_submissions').delete().eq('id', id);
     if (selected === id) setSelected(null);
     load();
   }

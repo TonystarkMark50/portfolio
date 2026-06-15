@@ -1,15 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Trash2, Briefcase, ExternalLink, Github, Image } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import ContentEditor, { InlineField, InlineTags, InlineSelect, InlineBool, useAutoSave } from './ContentEditor';
 
 interface Project {
-  id: string; title: string; slug: string; description: string; long_description: string | null;
-  image_url: string | null; category: string; technologies: string[];
+  id: string; name: string; type: string; status: string; completed_date: string | null;
+  description: string | null; highlights: string[]; technologies: string[];
+  report_url: string | null; image_url: string | null;
   github_url: string | null; demo_url: string | null; featured: boolean; display_order: number;
 }
 
-const categories = ['Biomedical', 'Academic', 'HealthTech', 'AI/ML', 'Web Apps', 'Other'];
+const categories = ['Academic', 'Biomedical', 'HealthTech', 'AI/ML', 'Web Apps', 'Other'];
 
 export default function AdminProjects() {
   const [items, setItems] = useState<Project[]>([]);
@@ -31,7 +32,7 @@ export default function AdminProjects() {
   }
 
   async function addProject() {
-    await supabase.from('projects').insert({ title: 'New Project', description: '', category: 'Academic', technologies: [], featured: false, slug: `project-${Date.now()}`, display_order: items.length });
+    await supabase.from('projects').insert({ name: 'New Project', description: '', type: 'Academic', status: 'Completed', technologies: [], featured: false, display_order: items.length });
     load();
   }
 
@@ -62,7 +63,7 @@ export default function AdminProjects() {
           {/* Thumbnail */}
           <div className="aspect-video bg-gray-800 relative overflow-hidden">
             {item.image_url ? (
-              <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+              <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-600">
                 <Image className="w-8 h-8" />
@@ -73,8 +74,8 @@ export default function AdminProjects() {
           <div className="p-4 space-y-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
-                <InlineField value={item.title} onSave={v => updateField(item.id, 'title', v)} placeholder="Project title" className="text-sm font-medium" />
-                <InlineSelect value={item.category} options={categories} onSave={v => updateField(item.id, 'category', v)} label="Category" />
+                <InlineField value={item.name} onSave={v => updateField(item.id, 'name', v)} placeholder="Project name" className="text-sm font-medium" />
+                <InlineSelect value={item.type} options={categories} onSave={v => updateField(item.id, 'type', v)} label="Type" />
               </div>
               <button onClick={() => removeProject(item.id)} className="p-1.5 rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all shrink-0">
                 <Trash2 className="w-3.5 h-3.5" />

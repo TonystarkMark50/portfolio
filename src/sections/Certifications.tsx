@@ -1,7 +1,6 @@
 import { Award, Calendar, ExternalLink, ShieldCheck, Trophy, Code2, BookOpen } from 'lucide-react';
 import { useIntersectionObserver } from '../hooks/useScroll';
-import { certificationsData as fallbackCerts } from '../data/portfolio';
-import { useData } from '../hooks/usePortfolioData';
+import { useSupabaseData } from '../hooks/usePortfolioData';
 import { loadCertifications } from '../lib/loaders';
 
 const platformConfig: Record<string, { colors: string; border: string; text: string; logo: React.ReactNode }> = {
@@ -159,10 +158,10 @@ function CertificationCard({ cert, index, isVisible }: { cert: any; index: numbe
 
 export default function Certifications() {
   const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1 });
-  const certificationsData = useData(loadCertifications, fallbackCerts as any);
-  const hasRealCertifications = certificationsData.some(
-    (c: any) => c.title !== 'Certification Title' || c.organization !== 'Issuing Organization'
-  );
+  const { data: certificationsData } = useSupabaseData(loadCertifications);
+  const hasRealCertifications = certificationsData
+    ? certificationsData.some((c: any) => c.title !== 'Certification Title' || c.organization !== 'Issuing Organization')
+    : false;
 
   return (
     <section

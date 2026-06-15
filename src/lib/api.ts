@@ -113,6 +113,23 @@ export interface SiteSettings {
   theme: string;
 }
 
+export interface Project {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  completed_date: string | null;
+  description: string | null;
+  highlights: string[];
+  technologies: string[];
+  report_url: string | null;
+  image_url: string | null;
+  github_url: string | null;
+  demo_url: string | null;
+  featured: boolean;
+  display_order: number;
+}
+
 // ============================================================
 // Generic helpers
 // ============================================================
@@ -264,18 +281,6 @@ export async function upsertContactInfo(contact: Partial<ContactInfo>) {
 // ============================================================
 // Projects
 // ============================================================
-
-export interface Project {
-  id: string;
-  name: string;
-  type: string;
-  status: string;
-  completed_date: string | null;
-  highlights: string[];
-  technologies: string[];
-  report_url: string | null;
-  display_order: number;
-}
 
 export async function getProjects() {
   return getAll<Project>('projects', 'display_order');

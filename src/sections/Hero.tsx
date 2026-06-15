@@ -5,8 +5,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { useMousePosition } from '../hooks/useScroll';
-import { personalInfo as fallbackInfo, aboutContent as fallbackContent, aboutSubtitle as fallbackSubtitle } from '../data/portfolio';
-import { useData } from '../hooks/usePortfolioData';
+import { useSupabaseData } from '../hooks/usePortfolioData';
 import { loadProfile, loadAbout } from '../lib/loaders';
 
 const containerVariants = {
@@ -96,8 +95,9 @@ export default function Hero() {
   const { x: mouseX, y: mouseY } = useMousePosition();
   const [mounted, setMounted] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const profile = useData(loadProfile, fallbackInfo);
-  const aboutData = useData(loadAbout, { content: fallbackContent, subtitle: fallbackSubtitle });
+  const { data: profile } = useSupabaseData(loadProfile);
+  const { data: aboutData } = useSupabaseData(loadAbout);
+  if (!profile || !aboutData) return null;
 
   useEffect(() => {
     setMounted(true);

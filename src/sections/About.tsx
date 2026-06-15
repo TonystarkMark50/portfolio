@@ -1,12 +1,12 @@
 import { MessageSquare } from 'lucide-react';
 import { useIntersectionObserver } from '../hooks/useScroll';
-import { aboutContent as fallbackContent, aboutSubtitle as fallbackSubtitle } from '../data/portfolio';
-import { useData } from '../hooks/usePortfolioData';
+import { useSupabaseData } from '../hooks/usePortfolioData';
 import { loadAbout } from '../lib/loaders';
 
 export default function About() {
   const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1 });
-  const aboutData = useData(loadAbout, { content: fallbackContent, subtitle: fallbackSubtitle });
+  const { data: aboutData } = useSupabaseData(loadAbout);
+  if (!aboutData) return null;
 
   return (
     <section

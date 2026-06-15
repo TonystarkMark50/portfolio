@@ -1,15 +1,4 @@
 import {
-  personalInfo as fallbackPersonalInfo,
-  aboutContent as fallbackAboutContent,
-  aboutSubtitle as fallbackAboutSubtitle,
-  skillCategories as fallbackSkillCategories,
-  educationData as fallbackEducation,
-  certificationsData as fallbackCertifications,
-  projectsData as fallbackProjects,
-  professionalSummary as fallbackProfessionalSummary,
-  languages as fallbackLanguages,
-} from '../data/portfolio';
-import {
   getProfile,
   getAbout,
   getSkills,
@@ -111,12 +100,12 @@ export async function loadProfile(): Promise<PersonalInfo | null> {
   const { data } = await getProfile();
   if (data) {
     return {
-      name: data.name || fallbackPersonalInfo.name,
-      title: data.title || fallbackPersonalInfo.title,
-      location: data.location || fallbackPersonalInfo.location,
-      email: data.email || fallbackPersonalInfo.email,
-      linkedin: data.linkedin || fallbackPersonalInfo.linkedin,
-      github: data.github || fallbackPersonalInfo.github,
+      name: data.name || '',
+      title: data.title || '',
+      location: data.location || '',
+      email: data.email || '',
+      linkedin: data.linkedin || '',
+      github: data.github || '',
     };
   }
   return null;
@@ -127,8 +116,8 @@ export async function loadAbout(): Promise<AboutData | null> {
   if (data && data.length > 0) {
     const first = data[0];
     return {
-      content: first.paragraphs.length > 0 ? first.paragraphs : fallbackAboutContent,
-      subtitle: first.subtitle || fallbackAboutSubtitle,
+      content: first.paragraphs || [],
+      subtitle: first.subtitle || '',
     };
   }
   return null;
@@ -246,16 +235,16 @@ export async function loadContactInfo(): Promise<{ email: string; location: stri
   const { data } = await getContactInfo();
   if (data) {
     return {
-      email: data.email || fallbackPersonalInfo.email,
-      location: data.location || fallbackPersonalInfo.location,
-      linkedin: data.linkedin || fallbackPersonalInfo.linkedin,
-      github: data.github || fallbackPersonalInfo.github,
+      email: data.email || '',
+      location: data.location || '',
+      linkedin: data.linkedin || '',
+      github: data.github || '',
     };
   }
   return null;
 }
 
-export async function loadResumeData(): Promise<ResumeData> {
+export async function loadResumeData(): Promise<ResumeData | null> {
   const [profile, education, internship, projects, skills, certifications] = await Promise.all([
     loadProfile(),
     loadEducation(),
@@ -265,56 +254,17 @@ export async function loadResumeData(): Promise<ResumeData> {
     loadCertifications(),
   ]);
 
-  const pi = profile || fallbackPersonalInfo;
-  const edu = education || fallbackEducation.map((e) => ({
-    id: e.id,
-    degree: e.degree,
-    field: e.field || null,
-    institution: e.institution,
-    period: e.period || null,
-    location: e.location || null,
-    gpa: e.gpa || null,
-    status: e.status || null,
-    current: !!e.current,
-    description: e.description || null,
-  }));
-  const intern = internship || null;
-  const projs = projects || fallbackProjects.map((p) => ({
-    name: p.name,
-    type: p.type,
-    status: p.status,
-    completedDate: p.completedDate || null,
-    highlights: p.highlights,
-    technologies: p.technologies,
-    reportUrl: (p as any).reportUrl || null,
-  }));
-  const sk = skills || fallbackSkillCategories;
-  const certs = certifications || fallbackCertifications.map((c) => ({
-    id: c.id,
-    title: c.title,
-    organization: c.organization,
-    platform: c.platform || null,
-    issueDate: c.issueDate || null,
-    credentialId: c.credentialId || null,
-    certificateUrl: c.certificateUrl || null,
-    embedUrl: c.embedUrl || null,
-    description: c.description || null,
-    category: c.category || null,
-    skills: c.skills,
-    status: c.status,
-    logoUrl: (c as any).logoUrl || null,
-  }));
-  const hasCerts = certs.some((c) => c.title !== 'Certification Title' || c.organization !== 'Issuing Organization');
+  if (!profile) return null;
 
   return {
-    personalInfo: pi,
-    professionalSummary: fallbackProfessionalSummary,
-    education: edu,
-    internship: intern,
-    projects: projs,
-    skills: sk,
-    certifications: certs,
-    hasRealCertifications: hasCerts,
-    languages: fallbackLanguages,
+    personalInfo: profile,
+    professionalSummary: [],
+    education: education || [],
+    internship: internship || null,
+    projects: projects || [],
+    skills: skills || [],
+    certifications: certifications || [],
+    hasRealCertifications: (certifications || []).length > 0,
+    languages: [],
   };
 }

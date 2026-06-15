@@ -1,7 +1,6 @@
 import { Code2, Database, Microscope, PenTool, Zap } from 'lucide-react';
 import { useIntersectionObserver } from '../hooks/useScroll';
-import { skillCategories as fallbackData } from '../data/portfolio';
-import { useData } from '../hooks/usePortfolioData';
+import { useSupabaseData } from '../hooks/usePortfolioData';
 import { loadSkills } from '../lib/loaders';
 
 const iconMap: Record<string, typeof Code2> = {
@@ -13,7 +12,8 @@ const iconMap: Record<string, typeof Code2> = {
 
 export default function Skills() {
   const [sectionRef, isVisible] = useIntersectionObserver({ threshold: 0.15 });
-  const data = useData(loadSkills, fallbackData);
+  const { data } = useSupabaseData(loadSkills);
+  if (!data) return null;
 
   return (
     <section id="skills" className="relative py-16 sm:py-20 md:py-24 lg:py-32 overflow-hidden bg-gradient-to-b from-gray-50 via-white to-gray-50 dark:from-dark-900 dark:via-dark-800 dark:to-dark-900">

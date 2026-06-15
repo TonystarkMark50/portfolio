@@ -1,11 +1,10 @@
 import { Cpu, ListChecks, BookOpen, Activity, FileText, ExternalLink } from 'lucide-react';
 import Section from '../components/Section';
-import { projectsData as fallbackData } from '../data/portfolio';
-import { useData } from '../hooks/usePortfolioData';
+import { useSupabaseData } from '../hooks/usePortfolioData';
 import { loadProjects } from '../lib/loaders';
 
 export default function Projects() {
-  const projects = useData(loadProjects, fallbackData);
+  const { data: projects } = useSupabaseData(loadProjects);
   const project = projects[0];
   if (!project) return null;
   const technologies = project.technologies;

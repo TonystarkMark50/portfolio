@@ -1,9 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
 import { Send, Mail, MapPin, Clock, ArrowRight, Github, Linkedin, Sparkles, CheckCircle, AlertCircle } from 'lucide-react';
 import Section from '../components/Section';
-import { useData } from '../hooks/usePortfolioData';
+import { useSupabaseData } from '../hooks/usePortfolioData';
 import { loadContactInfo } from '../lib/loaders';
-import { personalInfo as fallbackInfo } from '../data/portfolio';
 
 const WEB3FORMS_ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || '';
 const WEB3FORMS_URL = 'https://api.web3forms.com/submit';
@@ -50,12 +49,8 @@ function validateForm(data: { name: string; email: string; subject: string; mess
 }
 
 export default function Contact() {
-  const contactInfoData = useData(loadContactInfo, {
-    email: fallbackInfo.email,
-    location: fallbackInfo.location,
-    linkedin: fallbackInfo.linkedin,
-    github: fallbackInfo.github,
-  });
+  const { data: contactInfoData } = useSupabaseData(loadContactInfo);
+  if (!contactInfoData) return null;
   const [formData, setFormData] = useState({
     name: '',
     email: '',

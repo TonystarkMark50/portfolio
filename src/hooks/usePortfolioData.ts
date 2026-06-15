@@ -1,21 +1,28 @@
 import { useState, useEffect } from 'react';
 
-export function useData<T>(loader: () => Promise<T | null>, fallback: T): T {
-  const [data, setData] = useState<T>(fallback);
+export function useSupabaseData<T>(loader: () => Promise<T | null>): { data: T | null; loading: boolean; error: Error | null } {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
     loader()
       .then((result) => {
-        if (!cancelled && result !== null) {
+        if (!cancelled) {
           setData(result);
+          setLoading(false);
         }
       })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err : new Error(String(err)));
+          setLoading(false);
+        }
+      });
+    return () => { cancelled = true; };
   }, []);
 
-  return data;
+  return { data, loading, error };
 }

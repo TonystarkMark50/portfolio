@@ -22,7 +22,7 @@ export default function AnalyticsCenter() {
   useEffect(() => {
     Promise.all([
       getProjects(),
-      supabase.from('contact_messages').select('*', { count: 'exact', head: true }),
+      supabase.from('contact_submissions').select('*', { count: 'exact', head: true }),
     ]).then(([pRes, msgRes]) => {
       setProjects((pRes.data || []).map(p => ({ name: p.name || 'Untitled', views: Math.floor(Math.random() * 150) + 20 })));
       setMessageCount(msgRes.count || 0);
