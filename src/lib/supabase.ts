@@ -22,14 +22,8 @@ function insertNotification(notification: {
     message: notification.message,
     metadata: notification.metadata || null,
     is_read: false,
-  }).then(({ data, error }) => {
-    if (error) {
-      console.error('Notification insert error:', error);
-      console.error('Notification data:', notification);
-      console.error('Supabase anon key:', supabaseUrl ? 'Present' : 'Missing');
-    } else {
-      console.log('Notification created:', data);
-    }
+  }).then(({ error }) => {
+    if (error) console.error('Notification insert error:', error);
   });
 }
 
@@ -48,22 +42,27 @@ export async function submitContactForm(formData: {
       sender_ip = data.ip;
     } catch { void sender_ip; }
 
-    const { error: dbError } = await supabase
+    const { data: insertedData, error: dbError } = await supabase
       .from('contact_submissions')
-      .insert({ ...formData, sender_ip });
+      .insert({ ...formData, sender_ip })
+      .select('id')
+      .maybeSingle();
 
     if (dbError) throw dbError;
-    console.log('Contact form submitted to DB successfully');
 
-    // Create notification for admin
-    console.log('Creating notification...');
+    // Create notification with contact_submission_id in metadata
+    const contactSubmissionId = insertedData?.id;
     insertNotification({
       type: 'contact',
       title: 'New Contact Message',
       message: `${formData.name} contacted you regarding "${formData.subject}"`,
-      metadata: { name: formData.name, email: formData.email, subject: formData.subject },
+      metadata: {
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        contact_submission_id: contactSubmissionId,
+      },
     });
-    console.log('Notification insert initiated');
 
     return { success: true };
   } catch (error) {

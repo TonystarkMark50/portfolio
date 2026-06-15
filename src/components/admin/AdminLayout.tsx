@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect, useRef, useCallback } from 'react';
+import { ReactNode, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import {
   LayoutDashboard, User, BookOpen, Code2, Briefcase, GraduationCap, Award,
@@ -10,11 +10,12 @@ import { supabase } from '../../lib/supabase';
 import {
   getNotifications, getUnreadNotificationCount,
   markNotificationRead, markAllNotificationsRead,
-  deleteNotificationById, deleteAllNotifications, createNotification,
+  deleteNotificationById, deleteAllNotifications,
   type Notification,
 } from '../../lib/api';
 import CommandPalette from './CommandPalette';
 import ConfirmationModal from '../ConfirmationModal';
+import NotificationDetailPanel from './NotificationDetailPanel';
 import type { ConfirmAction } from '../ConfirmationModal';
 
 export type AdminTab =
@@ -83,6 +84,9 @@ export default function AdminLayout({
   const notifRef = useRef<HTMLDivElement>(null);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   const toastTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [showDetailPanel, setShowDetailPanel] = useState(false);
+  const [notifSearch, setNotifSearch] = useState('');
   const [confirm, setConfirm] = useState<{ open: boolean; action: ConfirmAction; onConfirm: () => void }>({ open: false, action: { title: '', message: '' }, onConfirm: () => {} });
 
   function showToast(message: string, type: 'error' | 'success' = 'error') {
@@ -92,13 +96,10 @@ export default function AdminLayout({
   }
 
   const loadNotifications = useCallback(async () => {
-    console.log('Loading notifications...');
     const [notifRes, unreadRes] = await Promise.all([
       getNotifications(30),
       getUnreadNotificationCount(),
     ]);
-    console.log('Notifications loaded:', notifRes);
-    console.log('Unread count:', unreadRes);
     if (notifRes.data) setNotifications(notifRes.data);
     setUnreadCount(unreadRes);
   }, []);
@@ -113,6 +114,32 @@ export default function AdminLayout({
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [loadNotifications]);
+
+  const filteredNotifications = useMemo(() => {
+    if (!notifSearch) return notifications;
+    const q = notifSearch.toLowerCase();
+    return notifications.filter(n =>
+      n.title.toLowerCase().includes(q) ||
+      n.message.toLowerCase().includes(q) ||
+      (n.type === 'contact' && JSON.stringify(n.metadata).toLowerCase().includes(q))
+    );
+  }, [notifications, notifSearch]);
+
+  function handleNotificationClick(n: Notification) {
+    setSelectedNotification(n);
+    setShowDetailPanel(true);
+    setShowNotifs(false);
+  }
+
+  function handleCloseDetailPanel() {
+    setShowDetailPanel(false);
+    setSelectedNotification(null);
+  }
+
+  function handleDetailMarkRead(id: string) {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    setUnreadCount(prev => Math.max(0, prev - 1));
+  }
 
   function formatTimeAgo(dateStr: string) {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -217,6 +244,12 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <ConfirmationModal open={confirm.open} action={confirm.action} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(prev => ({ ...prev, open: false }))} />
+      <NotificationDetailPanel
+        notification={selectedNotification}
+        open={showDetailPanel}
+        onClose={handleCloseDetailPanel}
+        onMarkRead={handleDetailMarkRead}
+      />
       <CommandPalette onNavigate={onTabChange} open={cmdOpen} onClose={() => setCmdOpen(false)} />
 
       {toast && (
@@ -335,31 +368,42 @@ export default function AdminLayout({
               </button>
               {showNotifs && (
                 <div className="absolute right-0 top-full mt-2 w-80 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50">
-                  <div className="p-3 border-b border-gray-800 flex items-center justify-between">
-                    <p className="text-xs font-semibold text-gray-200">Notifications</p>
-                    <div className="flex items-center gap-2">
-                      {notifications.length > 0 && (
-                        <button onClick={handleClearAll} className="flex items-center gap-1 text-[10px] text-red-400 hover:text-red-300 transition-colors">
-                          <Trash2 className="w-3 h-3" /> Clear all
-                        </button>
-                      )}
-                      {unreadCount > 0 && (
-                        <button onClick={handleMarkAllRead} className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors">
-                          <CheckCheck className="w-3 h-3" /> Mark all read
-                        </button>
-                      )}
+                  <div className="p-3 border-b border-gray-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-gray-200">Notifications</p>
+                      <div className="flex items-center gap-2">
+                        {notifications.length > 0 && (
+                          <button onClick={handleClearAll} className="flex items-center gap-1 text-[10px] text-red-400 hover:text-red-300 transition-colors">
+                            <Trash2 className="w-3 h-3" /> Clear all
+                          </button>
+                        )}
+                        {unreadCount > 0 && (
+                          <button onClick={handleMarkAllRead} className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors">
+                            <CheckCheck className="w-3 h-3" /> Mark all read
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+                      <input
+                        value={notifSearch}
+                        onChange={e => setNotifSearch(e.target.value)}
+                        placeholder="Search notifications..."
+                        className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-xs text-white placeholder-gray-500 outline-none focus:border-blue-500 transition-colors"
+                      />
                     </div>
                   </div>
                   <div className="max-h-80 overflow-y-auto">
-                    {notifications.length === 0 ? (
+                    {filteredNotifications.length === 0 ? (
                       <div className="p-8 text-center text-gray-500 text-xs">
                         <Bell className="w-8 h-8 mx-auto mb-2 text-gray-600" />
-                        <p>No notifications</p>
+                        <p>{notifSearch ? 'No matching notifications' : 'No notifications'}</p>
                       </div>
-                    ) : notifications.map(n => {
+                    ) : filteredNotifications.map(n => {
                       const Icon = getNotifIcon(n.type);
                       return (
-                        <div key={n.id} onClick={() => handleMarkAsRead(n.id)} className={`group flex items-start gap-3 p-3 hover:bg-gray-800/50 transition-colors cursor-pointer border-b border-gray-800/50 last:border-0 ${n.is_read ? 'opacity-60' : ''}`}>
+                        <div key={n.id} onClick={() => handleNotificationClick(n)} className={`group flex items-start gap-3 p-3 hover:bg-gray-800/50 transition-colors cursor-pointer border-b border-gray-800/50 last:border-0 ${n.is_read ? 'opacity-60' : ''}`}>
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                             n.type === 'contact' ? 'bg-blue-500/10' :
                             n.type === 'download' ? 'bg-emerald-500/10' :
@@ -388,6 +432,13 @@ export default function AdminLayout({
                       );
                     })}
                   </div>
+                  {notifications.length > 5 && !notifSearch && (
+                    <div className="p-2 border-t border-gray-800">
+                      <button onClick={() => { setShowNotifs(false); onTabChange('contact'); }} className="w-full py-1.5 rounded-lg text-[10px] text-blue-400 hover:bg-gray-800 transition-colors font-medium">
+                        View all in Contact Messages
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
