@@ -92,10 +92,13 @@ export default function AdminLayout({
   }
 
   const loadNotifications = useCallback(async () => {
+    console.log('Loading notifications...');
     const [notifRes, unreadRes] = await Promise.all([
       getNotifications(30),
       getUnreadNotificationCount(),
     ]);
+    console.log('Notifications loaded:', notifRes);
+    console.log('Unread count:', unreadRes);
     if (notifRes.data) setNotifications(notifRes.data);
     setUnreadCount(unreadRes);
   }, []);
