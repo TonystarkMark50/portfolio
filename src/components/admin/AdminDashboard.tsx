@@ -132,7 +132,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
 
   // Missing items for health
   const healthChecks = [
-    { label: 'Profile Photo', filled: !!profile?.profile_photo_url, tab: 'profile' as AdminTab },
+    { label: 'Profile Photo', filled: !!profile?.avatar_url, tab: 'profile' as AdminTab },
     { label: 'LinkedIn URL', filled: !!profile?.linkedin, tab: 'profile' as AdminTab },
     { label: 'GitHub URL', filled: !!profile?.github, tab: 'profile' as AdminTab },
     { label: 'Projects', filled: projects.length > 0, tab: 'projects' as AdminTab },
@@ -186,8 +186,8 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
       <div className="bg-gradient-to-br from-gray-900 to-gray-800/80 border border-gray-800 rounded-2xl p-6 shadow-lg">
         <div className="flex items-start gap-5">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-3xl font-bold shrink-0 shadow-lg overflow-hidden ring-2 ring-blue-500/20">
-            {profile?.profile_photo_url ? (
-              <img src={profile.profile_photo_url} alt="" className="w-full h-full object-cover" />
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
             ) : (
               (profile?.name || '?')[0]?.toUpperCase()
             )}

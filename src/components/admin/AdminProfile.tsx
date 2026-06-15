@@ -1,11 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
-import { Mail, MapPin, Link as LinkIcon, Github, Linkedin, Camera, Upload } from 'lucide-react';
+import { Mail, MapPin, Link as LinkIcon, Github, Linkedin, Camera } from 'lucide-react';
 import { getProfile, upsertProfile, Profile } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
 import ContentEditor, { InlineField, useAutoSave } from './ContentEditor';
 
-const PROFILE_BUCKET = 'resume-assets';
+const PROFILE_BUCKET = 'profile-images';
+const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const MAX_SIZE_MB = 2;
+const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+
+function validateImage(file: File): string | null {
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return `Invalid file type. Allowed: JPG, JPEG, PNG, WEBP`;
+  }
+  if (file.size > MAX_SIZE_BYTES) {
+    return `File too large. Maximum size: ${MAX_SIZE_MB}MB`;
+  }
+  return null;
+}
 
 export default function AdminProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -34,35 +47,57 @@ export default function AdminProfile() {
 
   async function handlePhotoUpload(file: File) {
     if (!profile) return;
+
+    const validationError = validateImage(file);
+    if (validationError) {
+      addToast('error', validationError);
+      return;
+    }
+
     setUploading(true);
+    console.log('Uploading image...', { name: file.name, size: file.size, type: file.type });
+
     try {
       const ext = file.name.split('.').pop();
-      const fileName = `profile-photo.${ext}`;
+      const fileName = `avatar.${ext}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log('Upload config:', { bucket: PROFILE_BUCKET, fileName });
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from(PROFILE_BUCKET)
         .upload(fileName, file, { cacheControl: '3600', upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Upload result:', uploadData);
 
       const { data: { publicUrl } } = supabase.storage
         .from(PROFILE_BUCKET)
         .getPublicUrl(fileName);
 
       const cacheBustUrl = `${publicUrl}?t=${Date.now()}`;
+      console.log('Public URL:', cacheBustUrl);
 
       const { error: dbError } = await upsertProfile({
         ...profile,
-        profile_photo_url: cacheBustUrl,
+        avatar_url: cacheBustUrl,
       });
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Database save error:', dbError);
+        throw dbError;
+      }
 
-      setProfile({ ...profile, profile_photo_url: cacheBustUrl });
-      addToast('success', 'Profile photo updated');
+      console.log('Profile saved with avatar_url:', cacheBustUrl);
+
+      setProfile({ ...profile, avatar_url: cacheBustUrl });
+      addToast('success', 'Profile photo updated successfully');
     } catch (err) {
       console.error('Photo upload failed:', err);
-      addToast('error', 'Failed to upload photo');
+      addToast('error', 'Failed to upload profile photo');
     } finally {
       setUploading(false);
     }
@@ -80,14 +115,14 @@ export default function AdminProfile() {
           {/* Photo Upload */}
           <div className="relative w-20 h-20 mb-3 group">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-3xl font-bold shadow-lg ring-4 ring-gray-900 overflow-hidden">
-              {profile.profile_photo_url ? (
-                <img src={profile.profile_photo_url} alt="" className="w-full h-full object-cover" />
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
               ) : (profile.name?.[0]?.toUpperCase() || '?')}
             </div>
             <input
               type="file"
               ref={fileRef}
-              accept="image/*"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
               className="hidden"
               onChange={e => {
                 const file = e.target.files?.[0];

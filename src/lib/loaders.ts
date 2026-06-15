@@ -18,7 +18,7 @@ export interface PersonalInfo {
   email: string;
   linkedin: string;
   github: string;
-  profile_photo_url: string | null;
+  avatar_url: string | null;
 }
 
 export interface SkillCategory {
@@ -110,7 +110,7 @@ export async function loadProfile(): Promise<PersonalInfo | null> {
       email: data.email || '',
       linkedin: data.linkedin || '',
       github: data.github || '',
-      profile_photo_url: data.profile_photo_url || null,
+      avatar_url: data.avatar_url || null,
     };
   }
   return null;

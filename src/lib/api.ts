@@ -15,7 +15,7 @@ export interface Profile {
   linkedin: string;
   github: string;
   portfolio_url: string | null;
-  profile_photo_url: string | null;
+  avatar_url: string | null;
   resume_url: string | null;
 }
 

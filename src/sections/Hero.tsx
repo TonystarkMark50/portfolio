@@ -298,13 +298,13 @@ export default function Hero() {
             >
               <div className="rounded-3xl bg-white/10 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-2xl overflow-hidden p-4 sm:p-6">
                 <div className="w-56 h-56 sm:w-64 sm:h-64 xl:w-72 xl:h-72 rounded-2xl overflow-hidden border-[3px] border-white/30 shadow-xl hover:border-primary-400/60 transition-all duration-500 hover:scale-[1.02]">
-                  {imgError || !profile?.profile_photo_url ? (
+                  {imgError || !profile?.avatar_url ? (
                     <div className="w-full h-full bg-gradient-to-br from-primary-500/30 to-accent-500/30 flex items-center justify-center">
                       <span className="text-3xl font-bold text-white/60">{profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'JT'}</span>
                     </div>
                   ) : (
                     <img
-                      src={profile.profile_photo_url}
+                      src={profile.avatar_url}
                       alt={profile.name || 'Profile'}
                       className="w-full h-full object-cover object-center"
                       loading="lazy"
