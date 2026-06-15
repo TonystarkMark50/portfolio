@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AdminProvider, useAdmin } from './context/AdminContext';
 import Navbar from './components/Navbar';
@@ -68,9 +69,20 @@ function MainSite() {
   );
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.history.scrollRestoration = 'manual';
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 function AppContent() {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route
         path="/admin/*"
@@ -92,6 +104,7 @@ function AppContent() {
         }
       />
     </Routes>
+    </>
   );
 }
 
