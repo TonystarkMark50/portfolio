@@ -51,7 +51,7 @@ function AdminContent() {
 
   return (
     <AdminLayout activeTab={activeTab} onTabChange={setActiveTab}>
-      {activeTab === 'dashboard' && <AdminDashboard />}
+      {activeTab === 'dashboard' && <AdminDashboard onNavigate={setActiveTab} />}
       {activeTab === 'profile' && <AdminProfile />}
       {activeTab === 'about' && <AdminAbout />}
       {activeTab === 'skills' && <AdminSkills />}
