@@ -106,12 +106,17 @@ export default function ContentEditor({
   const [device, setDevice] = useState<DeviceType>('desktop');
   const siteUrl = window.location.origin;
   const cfg = deviceConfig[device];
-  const [previewKey, setPreviewKey] = useState(0);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
-    const t = setTimeout(() => setPreviewKey(k => k + 1), 500);
+    if (status !== 'saved') return;
+    const t = setTimeout(() => {
+      try {
+        iframeRef.current?.contentWindow?.location.reload();
+      } catch {}
+    }, 300);
     return () => clearTimeout(t);
-  }, [children]);
+  }, [status]);
 
   return (
     <div className="space-y-6">
@@ -155,7 +160,7 @@ export default function ContentEditor({
           </div>
           <div className="flex justify-center bg-gray-950/50 p-4 overflow-x-auto">
             <div className="transition-all duration-300 overflow-hidden rounded-lg border border-gray-800 bg-white" style={{ width: cfg.width > 700 ? '100%' : cfg.width, maxWidth: '100%' }}>
-              <iframe key={previewKey} src={siteUrl} title="Live Preview" className="w-full bg-white" style={{ height: 450, maxHeight: '55vh' }} />
+              <iframe ref={iframeRef} src={siteUrl} title="Live Preview" className="w-full bg-white" style={{ height: 450, maxHeight: '55vh' }} />
             </div>
           </div>
         </div>

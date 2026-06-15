@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAdmin } from '../context/AdminContext';
 import { ToastProvider } from '../context/ToastContext';
 import AdminLayout from '../components/admin/AdminLayout';
@@ -51,7 +51,7 @@ function AdminContent() {
     );
   }
 
-  const sections: { tab: AdminTab; component: React.ReactNode }[] = [
+  const sections = useMemo((): { tab: AdminTab; component: React.ReactNode }[] => [
     { tab: 'dashboard', component: <AdminDashboard onNavigate={setActiveTab} /> },
     { tab: 'profile', component: <AdminProfile /> },
     { tab: 'about', component: <AdminAbout /> },
@@ -66,7 +66,7 @@ function AdminContent() {
     { tab: 'media', component: <AdminMedia /> },
     { tab: 'analytics', component: <AnalyticsCenter /> },
     { tab: 'settings', component: <AdminSettings /> },
-  ];
+  ], []);
 
   const activeSection = sections.find(s => s.tab === activeTab);
 
