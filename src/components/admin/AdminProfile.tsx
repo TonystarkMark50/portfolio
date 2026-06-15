@@ -29,7 +29,7 @@ export default function AdminProfile() {
   if (!profile) return <div className="text-gray-400">No profile data found</div>;
 
   return (
-    <ContentEditor title="Profile" subtitle="Your personal information — click any field to edit" status={status}>
+    <ContentEditor section="profile" title="Profile" subtitle="Your personal information — click any field to edit" status={status}>
       {/* Profile Card */}
       <div className="bg-gray-800/50 rounded-xl border border-gray-700 overflow-hidden">
         <div className="h-20 bg-gradient-to-r from-blue-600/20 to-purple-600/20" />

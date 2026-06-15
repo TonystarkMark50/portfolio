@@ -42,7 +42,7 @@ export default function AdminSettings() {
   if (loading) return <div className="animate-pulse h-40 bg-gray-800 rounded-xl" />;
 
   return (
-    <ContentEditor title="Settings" subtitle="Website configuration and social links" status={settingsStatus === 'idle' ? contactStatus : settingsStatus}>
+    <ContentEditor section="settings" title="Settings" subtitle="Website configuration and social links" status={settingsStatus === 'idle' ? contactStatus : settingsStatus}>
       <div className="space-y-6">
         {/* Site Settings */}
         <div>

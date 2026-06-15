@@ -39,7 +39,7 @@ export default function AdminSkills() {
   if (loading) return <div className="animate-pulse h-40 bg-gray-800 rounded-xl" />;
 
   return (
-    <ContentEditor title="Skills" subtitle="Technical skills organized by category" status={status}
+    <ContentEditor section="skills" title="Skills" subtitle="Technical skills organized by category" status={status}
       actions={
         <button onClick={addCategory} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors">
           <Plus className="w-3.5 h-3.5" /> Add Category

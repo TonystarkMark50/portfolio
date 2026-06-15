@@ -36,7 +36,7 @@ export default function AdminEducation() {
   if (loading) return <div className="animate-pulse h-40 bg-gray-800 rounded-xl" />;
 
   return (
-    <ContentEditor title="Education" subtitle="Your academic background — click to edit" status={status}
+    <ContentEditor section="education" title="Education" subtitle="Your academic background — click to edit" status={status}
       actions={
         <button onClick={addEntry} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors">
           <Plus className="w-3.5 h-3.5" /> Add Education

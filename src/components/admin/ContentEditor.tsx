@@ -1,5 +1,14 @@
 import { useState, useEffect, ReactNode, useRef, useCallback } from 'react';
-import { Monitor, Tablet, Smartphone, Check, Clock, AlertTriangle, Loader2, Save } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, Check, Clock, AlertTriangle, Loader2, Save, Globe } from 'lucide-react';
+import Hero from '../../sections/Hero';
+import About from '../../sections/About';
+import Skills from '../../sections/Skills';
+import Projects from '../../sections/Projects';
+import Education from '../../sections/Education';
+import Certifications from '../../sections/Certifications';
+import Internship from '../../sections/Internship';
+import Journey from '../../sections/Journey';
+import Contact from '../../sections/Contact';
 
 type DeviceType = 'desktop' | 'tablet' | 'mobile';
 
@@ -8,6 +17,42 @@ const deviceConfig: Record<DeviceType, { width: number; label: string; screen: s
   tablet: { width: 768, label: 'Tablet', screen: '768px' },
   mobile: { width: 375, label: 'Mobile', screen: '375px' },
 };
+
+const SECTION_PREVIEW_MAP: Record<string, React.ComponentType> = {
+  profile: Hero,
+  about: About,
+  skills: Skills,
+  projects: Projects,
+  education: Education,
+  certifications: Certifications,
+  internship: Internship,
+  journey: Journey,
+  contact: Contact,
+};
+
+const SECTION_LABELS: Record<string, string> = {
+  profile: 'Profile Section',
+  about: 'About Section',
+  skills: 'Skills Section',
+  projects: 'Projects Section',
+  education: 'Education Section',
+  certifications: 'Certifications Section',
+  internship: 'Internship Section',
+  journey: 'Journey Section',
+  contact: 'Contact Section',
+};
+
+function SectionPreviewRenderer({ section }: { section: string }) {
+  const Component = SECTION_PREVIEW_MAP[section];
+  if (!Component) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-[300px] text-gray-500 text-sm">
+        No preview available for this section
+      </div>
+    );
+  }
+  return <Component />;
+}
 
 export type SaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved' | 'error';
 
@@ -95,6 +140,7 @@ export default function ContentEditor({
   status,
   onSave,
   actions,
+  section,
 }: {
   title: string;
   subtitle?: string;
@@ -102,8 +148,10 @@ export default function ContentEditor({
   status: SaveStatus;
   onSave?: () => void;
   actions?: ReactNode;
+  section?: string;
 }) {
   const [device, setDevice] = useState<DeviceType>('desktop');
+  const [showFullWebsite, setShowFullWebsite] = useState(false);
   const siteUrl = window.location.origin;
   const cfg = deviceConfig[device];
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -148,19 +196,39 @@ export default function ContentEditor({
                 <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
               </div>
-              <span className="text-[10px] text-gray-500 ml-2">{siteUrl}</span>
+              {section && !showFullWebsite ? (
+                <span className="text-[10px] text-gray-400 ml-2">
+                  Previewing: <span className="text-gray-200 font-medium">{SECTION_LABELS[section] || section}</span>
+                </span>
+              ) : (
+                <span className="text-[10px] text-gray-500 ml-2">{siteUrl}</span>
+              )}
             </div>
-            <div className="flex items-center gap-1 bg-gray-900 rounded-lg p-0.5">
-              {(Object.entries(deviceConfig) as [DeviceType, typeof cfg][]).map(([key, d]) => (
-                <button key={key} onClick={() => setDevice(key)} className={`p-1.5 rounded-md transition-colors ${device === key ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
-                  {key === 'desktop' ? <Monitor className="w-3.5 h-3.5" /> : key === 'tablet' ? <Tablet className="w-3.5 h-3.5" /> : <Smartphone className="w-3.5 h-3.5" />}
+            <div className="flex items-center gap-2">
+              {section && (
+                <button onClick={() => setShowFullWebsite(v => !v)} className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors">
+                  <Globe className="w-3 h-3" />
+                  {showFullWebsite ? 'Section Preview' : 'Full Website'}
                 </button>
-              ))}
+              )}
+              <div className="flex items-center gap-1 bg-gray-900 rounded-lg p-0.5">
+                {(Object.entries(deviceConfig) as [DeviceType, typeof cfg][]).map(([key, d]) => (
+                  <button key={key} onClick={() => setDevice(key)} className={`p-1.5 rounded-md transition-colors ${device === key ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+                    {key === 'desktop' ? <Monitor className="w-3.5 h-3.5" /> : key === 'tablet' ? <Tablet className="w-3.5 h-3.5" /> : <Smartphone className="w-3.5 h-3.5" />}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           <div className="flex justify-center bg-gray-950/50 p-4 overflow-x-auto">
             <div className="transition-all duration-300 overflow-hidden rounded-lg border border-gray-800 bg-white" style={{ width: cfg.width > 700 ? '100%' : cfg.width, maxWidth: '100%' }}>
-              <iframe ref={iframeRef} src={siteUrl} title="Live Preview" className="w-full bg-white" style={{ height: 450, maxHeight: '55vh' }} />
+              {section && !showFullWebsite ? (
+                <div className="w-full overflow-y-auto" style={{ height: 450, maxHeight: '55vh' }}>
+                  <SectionPreviewRenderer section={section} />
+                </div>
+              ) : (
+                <iframe ref={iframeRef} src={siteUrl} title="Live Preview" className="w-full bg-white" style={{ height: 450, maxHeight: '55vh' }} />
+              )}
             </div>
           </div>
         </div>
