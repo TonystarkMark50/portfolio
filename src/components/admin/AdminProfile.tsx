@@ -17,7 +17,7 @@ export default function AdminProfile() {
     if (error) throw error;
   };
 
-  const { status, triggerSave } = useAutoSave(save, [profile]);
+  const { status, triggerSave } = useAutoSave(save);
 
   function update(key: keyof Profile, val: string) {
     if (!profile) return;

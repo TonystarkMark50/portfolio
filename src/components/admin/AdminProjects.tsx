@@ -31,7 +31,7 @@ export default function AdminProjects() {
     }
   };
 
-  const { status, triggerSave } = useAutoSave(save, [items]);
+  const { status, triggerSave } = useAutoSave(save);
 
   async function updateField(id: string, key: keyof Project, val: any) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));

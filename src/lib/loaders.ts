@@ -290,7 +290,7 @@ export async function loadResumeData(): Promise<ResumeData | null> {
     if (settings && (settings as any).resume_summary) {
       summaryText = (settings as any).resume_summary;
     }
-  } catch {}
+  } catch { /* ignore */ } 
 
   return {
     personalInfo: profile,

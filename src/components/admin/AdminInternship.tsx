@@ -24,7 +24,7 @@ export default function AdminInternship() {
     }
   };
 
-  const { status, triggerSave } = useAutoSave(save, [items]);
+  const { status, triggerSave } = useAutoSave(save);
 
   async function updateField(id: string, key: keyof Internship, val: any) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));

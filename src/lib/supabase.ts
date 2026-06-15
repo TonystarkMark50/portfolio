@@ -22,7 +22,7 @@ export async function submitContactForm(formData: {
       const res = await fetch('https://api.ipify.org?format=json');
       const data = await res.json();
       sender_ip = data.ip;
-    } catch {}
+    } catch { void sender_ip; }
 
     const { error: dbError } = await supabase
       .from('contact_submissions')

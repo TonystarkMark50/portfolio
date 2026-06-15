@@ -23,6 +23,23 @@ function AdminContent() {
   const { isAuthenticated, isLoading } = useAdmin();
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
 
+  const sections = useMemo((): { tab: AdminTab; component: React.ReactNode }[] => [
+    { tab: 'dashboard', component: <AdminDashboard onNavigate={setActiveTab} /> },
+    { tab: 'profile', component: <AdminProfile /> },
+    { tab: 'about', component: <AdminAbout /> },
+    { tab: 'skills', component: <AdminSkills /> },
+    { tab: 'projects', component: <AdminProjects /> },
+    { tab: 'internship', component: <AdminInternship /> },
+    { tab: 'education', component: <AdminEducation /> },
+    { tab: 'certifications', component: <AdminCertifications /> },
+    { tab: 'journey', component: <AdminJourney /> },
+    { tab: 'contact', component: <AdminContacts /> },
+    { tab: 'resume', component: <AdminResume /> },
+    { tab: 'media', component: <AdminMedia /> },
+    { tab: 'analytics', component: <AnalyticsCenter /> },
+    { tab: 'settings', component: <AdminSettings /> },
+  ], []);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-950">
@@ -50,23 +67,6 @@ function AdminContent() {
       </div>
     );
   }
-
-  const sections = useMemo((): { tab: AdminTab; component: React.ReactNode }[] => [
-    { tab: 'dashboard', component: <AdminDashboard onNavigate={setActiveTab} /> },
-    { tab: 'profile', component: <AdminProfile /> },
-    { tab: 'about', component: <AdminAbout /> },
-    { tab: 'skills', component: <AdminSkills /> },
-    { tab: 'projects', component: <AdminProjects /> },
-    { tab: 'internship', component: <AdminInternship /> },
-    { tab: 'education', component: <AdminEducation /> },
-    { tab: 'certifications', component: <AdminCertifications /> },
-    { tab: 'journey', component: <AdminJourney /> },
-    { tab: 'contact', component: <AdminContacts /> },
-    { tab: 'resume', component: <AdminResume /> },
-    { tab: 'media', component: <AdminMedia /> },
-    { tab: 'analytics', component: <AnalyticsCenter /> },
-    { tab: 'settings', component: <AdminSettings /> },
-  ], []);
 
   const activeSection = sections.find(s => s.tab === activeTab);
 

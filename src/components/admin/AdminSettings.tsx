@@ -26,8 +26,8 @@ export default function AdminSettings() {
     await upsertContactInfo(contact);
   }
 
-  const { status: settingsStatus, triggerSave: triggerSettingsSave } = useAutoSave(saveSettings, [settings]);
-  const { status: contactStatus, triggerSave: triggerContactSave } = useAutoSave(saveContact, [contact]);
+  const { status: settingsStatus, triggerSave: triggerSettingsSave } = useAutoSave(saveSettings);
+  const { status: contactStatus, triggerSave: triggerContactSave } = useAutoSave(saveContact);
 
   function updateSetting(key: string, val: string) {
     setSettings((prev: any) => ({ ...prev, [key]: val }));

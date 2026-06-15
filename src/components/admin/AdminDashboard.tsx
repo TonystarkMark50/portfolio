@@ -76,7 +76,6 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
   const [activities, setActivities] = useState<{ id: string; action: string; email: string; created_at: string }[]>([]);
   const [messages, setMessages] = useState<{ id: string; name: string; subject: string; status: string; created_at: string }[]>([]);
   const [unreadMessages, setUnreadMessages] = useState(0);
-  const [_settings, setSettings] = useState<{ site_title?: string; seo_description?: string } | null>(null);
   const [device, setDevice] = useState<DeviceType>('desktop');
   const [loading, setLoading] = useState(true);
   const [seoTitle, setSeoTitle] = useState('');
@@ -106,8 +105,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
       if (auditRes.data) setActivities(auditRes.data);
       setUnreadMessages(msgRes.count || 0);
       if (settingsRes.data) {
-        const s = settingsRes.data as any;
-        setSettings(s); // eslint-disable-line no-unused-vars
+        const s = settingsRes.data;
         setSeoTitle(s.site_title || '');
         setSeoDesc(s.seo_description || '');
       }

@@ -32,7 +32,7 @@ export default function AdminJourney() {
     }
   };
 
-  const { status, triggerSave } = useAutoSave(save, [items]);
+  const { status, triggerSave } = useAutoSave(save);
 
   async function updateField(id: string, key: keyof Journey, val: any) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
@@ -86,7 +86,7 @@ export default function AdminJourney() {
         <div className="relative">
           <div className="absolute left-[17px] top-2 bottom-2 w-px bg-gray-800" />
           <div className="space-y-4">
-            {items.map((item, _idx) => {
+            {items.map((item) => {
               const Icon = iconOptions.find(o => o.value === item.icon)?.icon || Star;
               return (
                 <div key={item.id} className="relative pl-10 group">

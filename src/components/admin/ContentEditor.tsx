@@ -98,7 +98,7 @@ export function AutoSaveBar({ status, onSave }: { status: SaveStatus; onSave?: (
   );
 }
 
-export function useAutoSave(saveFn: () => Promise<void>, _deps: any[]) {
+export function useAutoSave(saveFn: () => Promise<void>) {
   const [status, setStatus] = useState<SaveStatus>('idle');
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
   const mountedRef = useRef(true);

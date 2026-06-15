@@ -110,7 +110,7 @@ export default function Contact() {
         });
         const data = await res.json();
         web3formsOk = !!data.success;
-      } catch {}
+      } catch { /* ignore web3forms fallback */ }
 
       if (!dbResult.success && !web3formsOk) {
         throw new Error('Failed to send message');
