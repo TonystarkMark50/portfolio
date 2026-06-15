@@ -25,19 +25,19 @@ export default function AdminProjects() {
   useEffect(() => { load(); }, []);
 
   async function load() {
-    const { data } = await supabase.from('admin_projects').select('*').order('display_order');
+    const { data } = await supabase.from('projects').select('*').order('display_order');
     if (data) setProjects(data);
     setLoading(false);
   }
 
   async function toggleFeatured(project: Project) {
-    await supabase.from('admin_projects').update({ featured: !project.featured }).eq('id', project.id);
+    await supabase.from('projects').update({ featured: !project.featured }).eq('id', project.id);
     load();
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this project?')) return;
-    await supabase.from('admin_projects').delete().eq('id', id);
+    await supabase.from('projects').delete().eq('id', id);
     load();
   }
 
@@ -49,9 +49,9 @@ export default function AdminProjects() {
       slug: editing.slug || editing.title?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || '',
     };
     if (editing.id) {
-      await supabase.from('admin_projects').update(payload).eq('id', editing.id);
+      await supabase.from('projects').update(payload).eq('id', editing.id);
     } else {
-      await supabase.from('admin_projects').insert(payload);
+      await supabase.from('projects').insert(payload);
     }
     setEditing(null);
     load();

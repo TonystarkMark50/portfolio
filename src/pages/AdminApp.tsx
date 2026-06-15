@@ -4,11 +4,16 @@ import AdminLayout from '../components/admin/AdminLayout';
 import type { AdminTab } from '../components/admin/AdminLayout';
 import AdminDashboard from '../components/admin/AdminDashboard';
 import AdminProfile from '../components/admin/AdminProfile';
+import AdminAbout from '../components/admin/AdminAbout';
 import AdminSkills from '../components/admin/AdminSkills';
 import AdminEducation from '../components/admin/AdminEducation';
+import AdminInternship from '../components/admin/AdminInternship';
 import AdminCertifications from '../components/admin/AdminCertifications';
 import AdminProjects from '../components/admin/AdminProjects';
+import AdminJourney from '../components/admin/AdminJourney';
 import AdminContacts from '../components/admin/AdminContacts';
+import AdminResume from '../components/admin/AdminResume';
+import AdminSettings from '../components/admin/AdminSettings';
 
 export default function AdminPanel() {
   const { isAuthenticated, isLoading } = useAdmin();
@@ -16,8 +21,11 @@ export default function AdminPanel() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-dark-900">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-3 border-primary-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-500">Loading admin panel...</p>
+        </div>
       </div>
     );
   }
@@ -25,10 +33,13 @@ export default function AdminPanel() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-dark-900">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="w-16 h-16 rounded-2xl bg-error-100 dark:bg-error-900/30 flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">🔒</span>
+          </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Access Denied</h1>
-          <p className="text-gray-500">You do not have permission to access this area.</p>
-          <a href="/" className="inline-block mt-4 px-6 py-2 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors">
+          <p className="text-gray-500 mb-6">You do not have permission to access this area.</p>
+          <a href="/" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors">
             Go to Homepage
           </a>
         </div>
@@ -40,36 +51,16 @@ export default function AdminPanel() {
     <AdminLayout activeTab={activeTab} onTabChange={setActiveTab}>
       {activeTab === 'dashboard' && <AdminDashboard />}
       {activeTab === 'profile' && <AdminProfile />}
+      {activeTab === 'about' && <AdminAbout />}
       {activeTab === 'skills' && <AdminSkills />}
+      {activeTab === 'projects' && <AdminProjects />}
+      {activeTab === 'internship' && <AdminInternship />}
       {activeTab === 'education' && <AdminEducation />}
       {activeTab === 'certifications' && <AdminCertifications />}
-      {activeTab === 'projects' && <AdminProjects />}
+      {activeTab === 'journey' && <AdminJourney />}
       {activeTab === 'contact' && <AdminContacts />}
-      {activeTab === 'about' && (
-        <div className="text-center py-20 text-gray-500">
-          <p>About management module coming soon.</p>
-        </div>
-      )}
-      {activeTab === 'internship' && (
-        <div className="text-center py-20 text-gray-500">
-          <p>Internship management module coming soon.</p>
-        </div>
-      )}
-      {activeTab === 'journey' && (
-        <div className="text-center py-20 text-gray-500">
-          <p>Journey management module coming soon.</p>
-        </div>
-      )}
-      {activeTab === 'resume' && (
-        <div className="text-center py-20 text-gray-500">
-          <p>Resume preview and settings coming soon.</p>
-        </div>
-      )}
-      {activeTab === 'settings' && (
-        <div className="text-center py-20 text-gray-500">
-          <p>Site settings coming soon.</p>
-        </div>
-      )}
+      {activeTab === 'resume' && <AdminResume />}
+      {activeTab === 'settings' && <AdminSettings />}
     </AdminLayout>
   );
 }
