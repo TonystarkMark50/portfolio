@@ -1,3 +1,4 @@
+import { supabase } from './supabase';
 import {
   getProfile,
   getAbout,
@@ -256,9 +257,17 @@ export async function loadResumeData(): Promise<ResumeData | null> {
 
   if (!profile) return null;
 
+  let summaryText = '';
+  try {
+    const { data: settings } = await supabase.from('site_settings').select('resume_summary').limit(1).maybeSingle();
+    if (settings && (settings as any).resume_summary) {
+      summaryText = (settings as any).resume_summary;
+    }
+  } catch {}
+
   return {
     personalInfo: profile,
-    professionalSummary: [],
+    professionalSummary: summaryText ? [summaryText] : [],
     education: education || [],
     internship: internship || null,
     projects: projects || [],
