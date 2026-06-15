@@ -61,8 +61,6 @@ export default function Contact() {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const formRef = useRef<HTMLFormElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
-  if (!contactInfoData) return null;
-
   const handleChange = useCallback((field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -72,6 +70,7 @@ export default function Contact() {
       setSubmitStatus('idle');
     }
   }, [errors, submitStatus]);
+  if (!contactInfoData) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

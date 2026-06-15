@@ -118,6 +118,8 @@ export default function Hero() {
   const parallaxY = useSpring(mouseY, { stiffness: 100, damping: 30 });
   const bgX = useTransform(parallaxX, [0, window.innerWidth], [-20, 20]);
   const bgY = useTransform(parallaxY, [0, window.innerHeight], [-20, 20]);
+  const orbX = useTransform(parallaxX, [0, window.innerWidth], [10, -10]);
+  const orbY = useTransform(parallaxY, [0, window.innerHeight], [10, -10]);
 
   if (!profile || !aboutData) return null;
 
@@ -143,8 +145,8 @@ export default function Hero() {
         className="absolute -bottom-1/4 -left-1/4 w-[500px] sm:w-[700px] h-[500px] sm:h-[700px] rounded-full blur-[100px] sm:blur-[140px] opacity-25 dark:opacity-15"
         style={{
           background: 'radial-gradient(circle, rgba(139,92,246,0.25) 0%, rgba(34,197,94,0.1) 50%, transparent 70%)',
-          x: useTransform(parallaxX, [0, window.innerWidth], [10, -10]),
-          y: useTransform(parallaxY, [0, window.innerHeight], [10, -10]),
+          x: orbX,
+          y: orbY,
         }}
       />
 
