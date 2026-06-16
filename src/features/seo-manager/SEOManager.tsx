@@ -5,7 +5,6 @@ import {
   Search,
   Eye,
   Save,
-  Twitter,
   Image,
   Loader2,
   CheckCircle2,
@@ -20,7 +19,7 @@ interface SEOData {
   og_description: string;
   og_image_url: string;
   og_image_alt: string;
-  twitter_handle: string;
+  linkedin_url: string;
   author: string;
   canonical_url: string;
   keywords: string;
@@ -55,7 +54,7 @@ export default function SEOManager(_props: Props) {
     og_description: 'Explore my Biomedical Engineering journey, healthcare technology projects, internships, certifications, technical skills, and innovative solutions in medical technology and IoT systems.',
     og_image_url: '',
     og_image_alt: 'Jagadeesh T - Biomedical Engineering Portfolio',
-    twitter_handle: '',
+    linkedin_url: '',
     author: 'Jagadeesh T',
     canonical_url: 'https://portfolio-jagadeesh-t.netlify.app/',
     keywords: 'Biomedical Engineering, Healthcare Technology, Medical Devices, IoT Healthcare, Biomedical Student, Medical Technology, Engineering Portfolio, Healthcare Innovation, Biomedical Projects, Internet of Things, Clinical Engineering, Medical Equipment, Biomedical Intern, Healthcare Systems, Engineering Student, Portfolio Website',
@@ -89,7 +88,7 @@ export default function SEOManager(_props: Props) {
           og_description: data.og_description ?? 'Explore my Biomedical Engineering journey, healthcare technology projects, internships, certifications, technical skills, and innovative solutions in medical technology and IoT systems.',
           og_image_url: data.og_image_url ?? '',
           og_image_alt: data.og_image_alt ?? 'Jagadeesh T - Biomedical Engineering Portfolio',
-          twitter_handle: data.twitter_handle ?? '',
+          linkedin_url: data.linkedin_url ?? '',
           author: data.author ?? 'Jagadeesh T',
           canonical_url: data.canonical_url ?? 'https://portfolio-jagadeesh-t.netlify.app/',
           keywords: data.keywords ?? 'Biomedical Engineering, Healthcare Technology, Medical Devices, IoT Healthcare, Biomedical Student, Medical Technology, Engineering Portfolio, Healthcare Innovation, Biomedical Projects, Internet of Things, Clinical Engineering, Medical Equipment, Biomedical Intern, Healthcare Systems, Engineering Student, Portfolio Website',
@@ -358,24 +357,18 @@ export default function SEOManager(_props: Props) {
             )}
           </div>
 
-          {/* Twitter Handle */}
+          {/* LinkedIn URL */}
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-1.5">
-              <Twitter className="w-4 h-4 text-gray-500" />
-              Twitter Handle
+              LinkedIn URL
             </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-500">
-                @
-              </span>
-              <input
-                type="text"
-                value={seo.twitter_handle}
-                onChange={handleChange('twitter_handle')}
-                placeholder="username"
-                className="w-full pl-8 pr-4 py-2.5 text-sm bg-gray-900 border border-gray-700 rounded-xl text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-colors"
-              />
-            </div>
+            <input
+              type="url"
+              value={seo.linkedin_url}
+              onChange={handleChange('linkedin_url')}
+              placeholder="https://linkedin.com/in/username"
+              className="w-full px-4 py-2.5 text-sm bg-gray-900 border border-gray-700 rounded-xl text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-colors"
+            />
           </div>
         </div>
 
