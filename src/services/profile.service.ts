@@ -1,4 +1,4 @@
-import supabase from './supabaseClient';
+import { supabase } from '../lib/supabase';
 import logger from '../utils/logger';
 import type { ApiResult } from './helpers';
 import type { PostgrestError } from '@supabase/supabase-js';

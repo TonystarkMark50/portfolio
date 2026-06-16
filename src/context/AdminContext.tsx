@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import supabase from '../services/supabaseClient';
+import { supabase } from '../lib/supabase';
 import { OWNER_EMAIL } from '../config/app';
 import logger from '../utils/logger';
 

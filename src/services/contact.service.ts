@@ -1,5 +1,5 @@
 import { getSingle, upsert } from './helpers';
-import supabase from './supabaseClient';
+import { supabase } from '../lib/supabase';
 import DOMPurify from 'dompurify';
 import logger from '../utils/logger';
 import type { ApiResult } from './helpers';

@@ -9,7 +9,7 @@ const initSentry = () => {
 
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
-    tracesSampleRate: 1.0,
+    tracesSampleRate: import.meta.env.DEV ? 1.0 : 0.1,
     environment: import.meta.env.VITE_NODE_ENV,
     beforeSend(event) {
       logger.info('Sentry event sent:', event)
