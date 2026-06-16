@@ -11,12 +11,12 @@ import {
   getNotifications, getUnreadNotificationCount,
   markNotificationRead, markAllNotificationsRead,
   deleteNotificationById, deleteAllNotifications,
-  syncMissingNotifications,
   type Notification,
 } from '../../lib/api';
+import { useToast } from '../../context/ToastContext';
 import CommandPalette from './CommandPalette';
 import ConfirmationModal from '../ConfirmationModal';
-import NotificationDetailPanel from './NotificationDetailPanel';
+import NotificationDetailPanel from '../../features/notifications/NotificationDetailPanel';
 import type { ConfirmAction } from '../ConfirmationModal';
 
 export type AdminTab =
@@ -55,16 +55,56 @@ function CurrentTime() {
   );
 }
 
-function StatusDot({ label }: { label: string }) {
+function StatusDot({ label, online }: { label: string; online: boolean }) {
   return (
     <span className="flex items-center gap-1.5 text-xs text-gray-400">
       <span className="relative flex w-2 h-2">
-        <span className="animate-ping absolute inline-flex w-full h-full rounded-full bg-success-400 opacity-75" />
-        <span className="relative inline-flex w-2 h-2 rounded-full bg-success-500" />
+        {online && (
+          <span className="animate-ping absolute inline-flex w-full h-full rounded-full bg-success-400 opacity-75" />
+        )}
+        <span className={`relative inline-flex w-2 h-2 rounded-full ${online ? 'bg-success-500' : 'bg-red-500'}`} />
       </span>
       {label}
     </span>
   );
+}
+
+function useSupabaseStatus() {
+  const [online, setOnline] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    async function check() {
+      try {
+        const { error } = await supabase.from('site_settings').select('id').limit(1).maybeSingle();
+        if (!cancelled) setOnline(!error);
+      } catch {
+        if (!cancelled) setOnline(false);
+      }
+    }
+    check();
+    const id = setInterval(check, 30000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+  return online;
+}
+
+function useNetlifyStatus() {
+  const [online, setOnline] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    async function check() {
+      try {
+        const resp = await fetch(window.location.origin, { method: 'HEAD', mode: 'same-origin' });
+        if (!cancelled) setOnline(resp.ok);
+      } catch {
+        if (!cancelled) setOnline(false);
+      }
+    }
+    check();
+    const id = setInterval(check, 30000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+  return online;
 }
 
 export default function AdminLayout({
@@ -77,6 +117,9 @@ export default function AdminLayout({
   children: ReactNode;
 }) {
   const { user, logout } = useAdmin();
+  const { addToast } = useToast();
+  const supabaseOnline = useSupabaseStatus();
+  const netlifyOnline = useNetlifyStatus();
   const [collapsed, setCollapsed] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
@@ -103,28 +146,28 @@ export default function AdminLayout({
     ]);
     if (notifRes.data) setNotifications(notifRes.data);
     setUnreadCount(unreadRes);
-    // Sync: generate missing notifications from existing contact_submissions
-    const synced = await syncMissingNotifications();
-    if (synced > 0) {
-      const [refreshed, unread] = await Promise.all([
-        getNotifications(30),
-        getUnreadNotificationCount(),
-      ]);
-      if (refreshed.data) setNotifications(refreshed.data);
-      setUnreadCount(unread);
-    }
   }, []);
 
   useEffect(() => {
     loadNotifications();
     const channel = supabase
       .channel('notifications-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
+        loadNotifications();
+        const notif = payload.new as { title?: string; message?: string } | undefined;
+        if (notif?.title) {
+          addToast('info', `🔔 ${notif.title}${notif.message ? ` — ${notif.message}` : ''}`);
+        }
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications' }, () => {
+        loadNotifications();
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'notifications' }, () => {
         loadNotifications();
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [loadNotifications]);
+  }, [loadNotifications, addToast]);
 
   const filteredNotifications = useMemo(() => {
     if (!notifSearch) return notifications;
@@ -173,17 +216,6 @@ export default function AdminLayout({
     }
   }
 
-  async function handleMarkAsRead(id: string) {
-    const notif = notifications.find(n => n.id === id);
-    if (notif && !notif.is_read) {
-      const { error } = await markNotificationRead(id);
-      if (!error) {
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
-    }
-  }
-
   async function handleMarkAllRead() {
     const { error } = await markAllNotificationsRead();
     if (error) { showToast('Failed to mark all as read'); return; }
@@ -193,6 +225,7 @@ export default function AdminLayout({
 
   function handleDeleteNotification(e: React.MouseEvent, id: string) {
     e.stopPropagation();
+    const wasUnread = !notifications.find(n => n.id === id)?.is_read;
     setConfirm({
       open: true,
       action: {
@@ -206,7 +239,7 @@ export default function AdminLayout({
         const { error } = await deleteNotificationById(id);
         if (error) { showToast('Failed to delete notification'); return; }
         setNotifications(prev => prev.filter(n => n.id !== id));
-        if (!notifications.find(n => n.id === id)?.is_read) {
+        if (wasUnread) {
           setUnreadCount(prev => Math.max(0, prev - 1));
         }
       },
@@ -331,10 +364,12 @@ export default function AdminLayout({
           </a>
           <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500">
             <div className="relative flex w-2 h-2 shrink-0">
-              <span className="animate-ping absolute inline-flex w-full h-full rounded-full bg-success-400 opacity-75" />
-              <span className="relative inline-flex w-2 h-2 rounded-full bg-success-500" />
+              {netlifyOnline && (
+                <span className="animate-ping absolute inline-flex w-full h-full rounded-full bg-success-400 opacity-75" />
+              )}
+              <span className={`relative inline-flex w-2 h-2 rounded-full ${netlifyOnline ? 'bg-success-500' : 'bg-red-500'}`} />
             </div>
-            {!collapsed && <span>Deployed</span>}
+            {!collapsed && <span>{netlifyOnline ? 'Deployed' : 'Offline'}</span>}
           </div>
           <button onClick={() => setConfirm({
             open: true,
@@ -366,8 +401,8 @@ export default function AdminLayout({
           </div>
 
           <div className="flex items-center gap-4">
-            <StatusDot label="Supabase" />
-            <StatusDot label="Netlify" />
+            <StatusDot label="Supabase" online={supabaseOnline} />
+            <StatusDot label="Netlify" online={netlifyOnline} />
             <CurrentTime />
 
             <div className="relative" ref={notifRef}>

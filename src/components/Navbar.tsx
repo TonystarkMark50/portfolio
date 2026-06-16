@@ -5,7 +5,6 @@ import { useSupabaseData } from '../hooks/usePortfolioData';
 import { loadProfile, loadContactInfo } from '../lib/loaders';
 import ThemeToggle from './ThemeToggle';
 import ConfirmationModal from './ConfirmationModal';
-import type { ConfirmAction } from './ConfirmationModal';
 
 const NAVBAR_HEIGHT = 80;
 
@@ -83,7 +82,7 @@ export default function Navbar() {
         onCancel={() => setShowDownloadModal(false)}
       />
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-[padding,background,border-color,box-shadow] duration-500 ${
           isScrolled
             ? 'py-3 bg-white/70 dark:bg-dark-950/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 shadow-lg shadow-black/5'
             : 'bg-transparent py-5'
@@ -99,7 +98,7 @@ export default function Navbar() {
             className="relative group"
           >
             <span className="text-2xl font-bold gradient-text">Jagadeesh T</span>
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-primary-500 to-accent-500 transition-all duration-300 group-hover:w-full" />
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-primary-500 to-accent-500 transition-[width] duration-300 group-hover:w-full" />
           </a>
 
           <div className="hidden lg:flex items-center gap-1">
@@ -111,7 +110,7 @@ export default function Navbar() {
                   e.preventDefault();
                   scrollToSection(item.id);
                 }}
-                className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
+                className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-[color,background] duration-200 ${
                   hasInteracted && activeSection === item.id
                     ? 'text-primary-500 bg-primary-500/10'
                     : 'text-theme-secondary hover:text-primary-500 hover:bg-gray-100/50 dark:hover:bg-white/5'
@@ -126,7 +125,7 @@ export default function Navbar() {
             <div className="relative group hidden lg:block">
               <button
                 onClick={handleResumeClick}
-                className="relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-primary-500 to-accent-500 shadow-lg hover:shadow-glow transition-all duration-300 hover:scale-105 active:scale-95"
+                className="relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-primary-500 to-accent-500 shadow-lg hover:shadow-glow transition-[transform,box-shadow] duration-200 hover:scale-105 active:scale-95"
               >
                 <Download className="w-4 h-4" />
                 Resume
@@ -137,7 +136,7 @@ export default function Navbar() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="GitHub Profile"
-              className="p-2 rounded-xl hover:bg-gray-100/50 dark:hover:bg-white/5 border border-transparent hover:border-gray-200/50 dark:hover:border-white/10 transition-all duration-300"
+              className="p-2 rounded-xl hover:bg-gray-100/50 dark:hover:bg-white/5 border border-transparent hover:border-gray-200/50 dark:hover:border-white/10 transition-[background,border-color] duration-200"
             >
               <Github className="w-5 h-5 text-theme-secondary" />
             </a>
@@ -146,7 +145,7 @@ export default function Navbar() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn Profile"
-              className="p-2 rounded-xl hover:bg-gray-100/50 dark:hover:bg-white/5 border border-transparent hover:border-gray-200/50 dark:hover:border-white/10 transition-all duration-300"
+              className="p-2 rounded-xl hover:bg-gray-100/50 dark:hover:bg-white/5 border border-transparent hover:border-gray-200/50 dark:hover:border-white/10 transition-[background,border-color] duration-200"
             >
               <Linkedin className="w-5 h-5 text-theme-secondary" />
             </a>
@@ -155,7 +154,7 @@ export default function Navbar() {
 
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl hover:bg-gray-100/50 dark:hover:bg-white/5 border border-transparent hover:border-gray-200/50 dark:hover:border-white/10 transition-all duration-300"
+              className="lg:hidden p-2 rounded-xl hover:bg-gray-100/50 dark:hover:bg-white/5 border border-transparent hover:border-gray-200/50 dark:hover:border-white/10 transition-[background,border-color] duration-200"
               aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? (
@@ -169,7 +168,7 @@ export default function Navbar() {
       </nav>
 
       <div
-        className={`fixed inset-0 z-40 lg:hidden transition-all duration-300 ${
+        className={`fixed inset-0 z-40 lg:hidden transition-[opacity] duration-250 ${
           isMobileMenuOpen
             ? 'opacity-100 pointer-events-auto'
             : 'opacity-0 pointer-events-none'
@@ -180,7 +179,7 @@ export default function Navbar() {
           onClick={() => setIsMobileMenuOpen(false)}
         />
         <div
-          className={`absolute top-0 right-0 h-full w-72 max-w-[85vw] bg-white/90 dark:bg-dark-950/90 backdrop-blur-2xl shadow-2xl transform transition-transform duration-300 border-l border-gray-200/50 dark:border-gray-800/50 ${
+          className={`absolute top-0 right-0 h-full w-72 max-w-[85vw] bg-white/90 dark:bg-dark-950/90 backdrop-blur-2xl shadow-2xl transform transition-[transform] duration-250 border-l border-gray-200/50 dark:border-gray-800/50 ${
             isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
@@ -193,7 +192,7 @@ export default function Navbar() {
                   e.preventDefault();
                   scrollToSection(item.id);
                 }}
-                className={`px-4 py-3.5 rounded-xl text-lg font-medium transition-all duration-300 ${
+                className={`px-4 py-3.5 rounded-xl text-lg font-medium transition-[background,color,border-color] duration-200 ${
                   hasInteracted && activeSection === item.id
                     ? 'bg-gradient-to-r from-primary-500/10 to-accent-500/10 text-primary-500 border-l-2 border-primary-500'
                     : 'text-theme-secondary hover:bg-gray-100/50 dark:hover:bg-white/5'
@@ -206,7 +205,7 @@ export default function Navbar() {
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-dark-700 space-y-1">
               <button
                 onClick={handleResumeClick}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-theme-secondary hover:bg-gradient-to-r hover:from-primary-500/10 hover:to-accent-500/10 hover:text-primary-500 transition-all duration-300 w-full text-left group"
+                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-theme-secondary hover:bg-gradient-to-r hover:from-primary-500/10 hover:to-accent-500/10 hover:text-primary-500 transition-[background,color] duration-200 w-full text-left group"
               >
                 <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 <span>Download Resume</span>
@@ -214,7 +213,7 @@ export default function Navbar() {
               <a
                 href={`mailto:${contactInfo?.email || profile?.email || ''}`}
                 aria-label="Send Email"
-                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-theme-secondary hover:bg-gray-100/50 dark:hover:bg-white/5 transition-all duration-300 group"
+                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-theme-secondary hover:bg-gray-100/50 dark:hover:bg-white/5 transition-[background] duration-200 group"
               >
                 <Mail className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 <span>Email Me</span>

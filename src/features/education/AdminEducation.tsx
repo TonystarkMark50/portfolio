@@ -1,0 +1,105 @@
+import { useState, useEffect } from 'react';
+import { Plus, Trash2, GraduationCap } from 'lucide-react';
+import { getEducation, upsertEducation, deleteEducation, Education } from '../../lib/api';
+import ContentEditor, { InlineField, InlineBool, useAutoSave } from '../../components/admin/ContentEditor';
+import ConfirmationModal from '../../components/ConfirmationModal';
+import type { ConfirmAction } from '../../components/ConfirmationModal';
+
+export default function AdminEducation() {
+  const [items, setItems] = useState<Education[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [confirm, setConfirm] = useState<{ open: boolean; action: ConfirmAction; onConfirm: () => void }>({ open: false, action: { title: '', message: '' }, onConfirm: () => {} });
+
+  useEffect(() => { load(); }, []);
+
+  async function load() {
+    const { data } = await getEducation();
+    if (data) setItems(data);
+    setLoading(false);
+  }
+
+  const save = async () => {
+    for (const item of items) {
+      const { error } = await upsertEducation(item);
+      if (error) throw error;
+    }
+  };
+
+  const { status, triggerSave } = useAutoSave(save);
+
+  async function updateField(id: string, key: keyof Education, val: any) {
+    setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
+    triggerSave();
+  }
+
+  async function addEntry() {
+    await upsertEducation({ degree: 'New Degree', institution: 'Institution', display_order: items.length } as any);
+    load();
+  }
+
+  function removeEntry(id: string) {
+    const item = items.find(i => i.id === id);
+    setConfirm({
+      open: true,
+      action: {
+        title: 'Delete Education',
+        message: `Delete "${item?.degree || 'this entry'}"? This action cannot be undone.`,
+        confirmLabel: 'Delete',
+        variant: 'danger',
+        icon: 'trash',
+      },
+      onConfirm: async () => {
+        await deleteEducation(id);
+        load();
+      },
+    });
+  }
+
+  if (loading) return <div className="animate-pulse h-40 bg-gray-800 rounded-xl" />;
+
+  return (
+    <>
+    <ConfirmationModal open={confirm.open} action={confirm.action} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(prev => ({ ...prev, open: false }))} />
+    <ContentEditor section="education" title="Education" subtitle="Your academic background — click to edit" status={status}
+      actions={
+        <button onClick={addEntry} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors">
+          <Plus className="w-3.5 h-3.5" /> Add Education
+        </button>
+      }
+    >
+      {items.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <GraduationCap className="w-10 h-10 mx-auto mb-2 text-gray-600" />
+          <p className="text-sm">No education entries</p>
+          <button onClick={addEntry} className="mt-2 text-xs text-blue-400 hover:text-blue-300">Add entry</button>
+        </div>
+      ) : items.map(item => (
+        <div key={item.id} className="bg-gray-800/50 rounded-xl border border-gray-700 p-4 space-y-3 group">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center"><GraduationCap className="w-4 h-4 text-amber-400" /></div>
+                <div>
+                  <InlineField value={item.degree} onSave={v => updateField(item.id, 'degree', v)} placeholder="Degree" className="text-sm font-medium" />
+                  {item.field && <InlineField value={item.field} onSave={v => updateField(item.id, 'field', v)} placeholder="Field of study" className="text-xs text-gray-400" />}
+                </div>
+              </div>
+            </div>
+            <button onClick={() => removeEntry(item.id)} className="p-1.5 rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <InlineField value={item.institution} onSave={v => updateField(item.id, 'institution', v)} placeholder="Institution name" label="Institution" />
+          <div className="grid grid-cols-2 gap-3">
+            <InlineField value={item.period || ''} onSave={v => updateField(item.id, 'period', v)} placeholder="e.g. 2024 - Present" label="Period" />
+            <InlineField value={item.gpa || ''} onSave={v => updateField(item.id, 'gpa', v)} placeholder="e.g. 8.05" label="GPA / Score" />
+          </div>
+          <InlineField value={item.location || ''} onSave={v => updateField(item.id, 'location', v)} placeholder="Location" label="Location" />
+          <InlineField value={item.description || ''} onSave={v => updateField(item.id, 'description', v)} type="textarea" placeholder="Description" label="Description" />
+          <InlineBool value={item.current} onSave={v => updateField(item.id, 'current', v)} label="Currently enrolled" />
+        </div>
+      ))}
+    </ContentEditor>
+    </>
+  );
+}

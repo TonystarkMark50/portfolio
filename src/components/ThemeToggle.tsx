@@ -29,7 +29,7 @@ export default function ThemeToggle() {
 
       {/* Track */}
       <div
-        className="absolute inset-0 rounded-full transition-[background,box-shadow] duration-[600ms]"
+        className="absolute inset-0 rounded-full transition-[background,box-shadow] duration-[250ms]"
         style={{
           background: isDark
             ? 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)'
@@ -43,7 +43,7 @@ export default function ThemeToggle() {
 
       {/* Glass overlay */}
       <div
-        className="absolute inset-0 rounded-full transition-opacity duration-[600ms]"
+        className="absolute inset-0 rounded-full transition-opacity duration-[250ms]"
         style={{
           background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%)',
           opacity: 0.5,
@@ -52,7 +52,7 @@ export default function ThemeToggle() {
 
       {/* Thumb */}
       <div
-        className="absolute rounded-full bg-white flex items-center justify-center transition-[left,transform] duration-[600ms] group-hover:scale-105 group-active:scale-95 shadow-sm"
+        className="absolute rounded-full bg-white flex items-center justify-center transition-[left,transform] duration-[250ms] group-hover:scale-105 group-active:scale-95 shadow-sm"
         style={{
           top: gutter,
           left: thumbPos,

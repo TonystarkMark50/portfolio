@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Mail, Lock, LogIn, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 import { useNavigate } from 'react-router-dom';
+import { logAuditAction } from '../lib/api';
 
 export default function AdminLogin() {
   const { login, isAuthenticated } = useAdmin();
@@ -25,6 +26,9 @@ export default function AdminLogin() {
     const result = await login(email, password);
     if (!result.success) {
       setError(result.error || 'Login failed');
+      logAuditAction(`login failed: ${email}`);
+    } else {
+      logAuditAction(`login success: ${email}`);
     }
     setLoading(false);
   };

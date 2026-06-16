@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
+    "@marsidev/react-turnstile": "^1.5.3",
     "@react-pdf/renderer": "^3.4.4",
     "@supabase/supabase-js": "^2.57.4",
     "framer-motion": "^12.40.0",

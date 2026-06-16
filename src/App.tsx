@@ -7,15 +7,15 @@ import { BackToTop, Footer } from './components/ScrollComponents';
 import ErrorBoundary from './components/ErrorBoundary';
 import { trackPageView } from './lib/analytics';
 
-const Hero = lazy(() => import('./sections/Hero'));
-const About = lazy(() => import('./sections/About'));
-const Internship = lazy(() => import('./sections/Internship'));
-const Projects = lazy(() => import('./sections/Projects'));
-const Skills = lazy(() => import('./sections/Skills'));
-const Certifications = lazy(() => import('./sections/Certifications'));
-const Journey = lazy(() => import('./sections/Journey'));
-const Education = lazy(() => import('./sections/Education'));
-const Contact = lazy(() => import('./sections/Contact'));
+const Hero = lazy(() => import('./features/profile/HeroSection'));
+const About = lazy(() => import('./features/about/AboutSection'));
+const Internship = lazy(() => import('./features/internships/InternshipSection'));
+const Projects = lazy(() => import('./features/projects/ProjectsSection'));
+const Skills = lazy(() => import('./features/skills/SkillsSection'));
+const Certifications = lazy(() => import('./features/certifications/CertificationsSection'));
+const Journey = lazy(() => import('./features/journey/JourneySection'));
+const Education = lazy(() => import('./features/education/EducationSection'));
+const Contact = lazy(() => import('./features/contact/ContactSection'));
 const AdminLogin = lazy(() => import('./pages/AdminLogin'));
 const AdminPanel = lazy(() => import('./pages/AdminApp'));
 

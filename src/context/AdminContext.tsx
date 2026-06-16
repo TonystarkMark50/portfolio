@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
-import { OWNER_EMAIL } from '../lib/devMode';
+import { OWNER_EMAIL } from '../config/app';
 
 interface AdminContextType {
   user: User | null;

@@ -1,27 +1,40 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useAdmin } from '../context/AdminContext';
 import { ToastProvider } from '../context/ToastContext';
 import AdminLayout from '../components/admin/AdminLayout';
 import type { AdminTab } from '../components/admin/AdminLayout';
 import ErrorBoundary from '../components/ErrorBoundary';
-import AdminDashboard from '../components/admin/AdminDashboard';
-import AdminProfile from '../components/admin/AdminProfile';
-import AdminAbout from '../components/admin/AdminAbout';
-import AdminSkills from '../components/admin/AdminSkills';
-import AdminEducation from '../components/admin/AdminEducation';
-import AdminInternship from '../components/admin/AdminInternship';
-import AdminCertifications from '../components/admin/AdminCertifications';
-import AdminProjects from '../components/admin/AdminProjects';
-import AdminJourney from '../components/admin/AdminJourney';
-import AdminContacts from '../components/admin/AdminContacts';
-import AdminResume from '../components/admin/AdminResume';
+import AdminDashboard from '../features/dashboard/AdminDashboard';
+import AdminProfile from '../features/profile/AdminProfile';
+import AdminAbout from '../features/about/AdminAbout';
+import AdminSkills from '../features/skills/AdminSkills';
+import AdminEducation from '../features/education/AdminEducation';
+import AdminInternship from '../features/internships/AdminInternship';
+import AdminCertifications from '../features/certifications/AdminCertifications';
+import AdminProjects from '../features/projects/AdminProjects';
+import AdminJourney from '../features/journey/AdminJourney';
+import AdminContacts from '../features/contact/AdminContacts';
+import AdminResume from '../features/resume/AdminResume';
 import AdminMedia from '../components/admin/AdminMedia';
-import AdminSettings from '../components/admin/AdminSettings';
-import AnalyticsCenter from '../components/admin/AnalyticsCenter';
+import AdminSettings from '../features/settings/AdminSettings';
+import AnalyticsCenter from '../features/analytics/AnalyticsCenter';
+
+const TAB_STORAGE_KEY = 'admin-active-tab';
 
 function AdminContent() {
   const { isAuthenticated, isLoading } = useAdmin();
-  const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
+  const [activeTab, setActiveTab] = useState<AdminTab>(() => {
+    const saved = localStorage.getItem(TAB_STORAGE_KEY);
+    if (saved && ['dashboard','profile','about','skills','projects','internship','education','certifications','journey','contact','resume','media','settings','analytics'].includes(saved)) {
+      return saved as AdminTab;
+    }
+    return 'dashboard';
+  });
+
+  const handleTabChange = useCallback((tab: AdminTab) => {
+    setActiveTab(tab);
+    localStorage.setItem(TAB_STORAGE_KEY, tab);
+  }, []);
 
   const sections = useMemo((): { tab: AdminTab; component: React.ReactNode }[] => [
     { tab: 'dashboard', component: <AdminDashboard onNavigate={setActiveTab} /> },
@@ -71,7 +84,7 @@ function AdminContent() {
   const activeSection = sections.find(s => s.tab === activeTab);
 
   return (
-    <AdminLayout activeTab={activeTab} onTabChange={setActiveTab}>
+    <AdminLayout activeTab={activeTab} onTabChange={handleTabChange}>
       <ErrorBoundary
         sectionName={activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
         fallback={

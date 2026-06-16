@@ -29,6 +29,9 @@
   --text-secondary: #334155;
   --text-body: #1E293B;
   --text-muted: #475569;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .dark {
@@ -58,6 +61,9 @@
   --text-secondary: #CBD5E1;
   --text-body: #CBD5E1;
   --text-muted: #94A3B8;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 * {
@@ -151,11 +157,13 @@ body {
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.25s ease;
   }
 
-  .gradient-border:hover::before {
-    opacity: 1;
+  @media (hover: hover) and (pointer: fine) {
+    .gradient-border:hover::before {
+      opacity: 1;
+    }
   }
 
   .aurora-bg {
@@ -188,7 +196,7 @@ body {
 
   .magnetic-btn {
     position: relative;
-    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition: transform 0.25s var(--ease-out);
   }
 
   .magnetic-btn::after {
@@ -197,13 +205,15 @@ body {
     inset: 0;
     border-radius: inherit;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.25s ease;
     background: linear-gradient(135deg, var(--gradient-start), var(--gradient-mid));
     z-index: -1;
   }
 
-  .magnetic-btn:hover::after {
-    opacity: 0.15;
+  @media (hover: hover) and (pointer: fine) {
+    .magnetic-btn:hover::after {
+      opacity: 0.15;
+    }
   }
 
   .glow-btn {
@@ -220,11 +230,13 @@ body {
     z-index: -1;
     opacity: 0;
     filter: blur(15px);
-    transition: opacity 0.3s ease;
+    transition: opacity 0.25s ease;
   }
 
-  .glow-btn:hover::before {
-    opacity: 0.6;
+  @media (hover: hover) and (pointer: fine) {
+    .glow-btn:hover::before {
+      opacity: 0.6;
+    }
   }
 
   .shimmer {
@@ -255,7 +267,7 @@ body {
   .reveal-up {
     opacity: 0;
     transform: translateY(40px);
-    transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
   }
 
   .reveal-up.visible {
@@ -265,8 +277,8 @@ body {
 
   .reveal-scale {
     opacity: 0;
-    transform: scale(0.9);
-    transition: opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: scale(0.95);
+    transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out);
   }
 
   .reveal-scale.visible {
@@ -277,7 +289,7 @@ body {
   .reveal-left {
     opacity: 0;
     transform: translateX(-40px);
-    transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
   }
 
   .reveal-left.visible {
@@ -288,7 +300,7 @@ body {
   .reveal-right {
     opacity: 0;
     transform: translateX(40px);
-    transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
   }
 
   .reveal-right.visible {
@@ -299,11 +311,13 @@ body {
   .tilt-card {
     transform-style: preserve-3d;
     perspective: 1000px;
-    transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: transform 0.4s var(--ease-out);
   }
 
-  .tilt-card:hover {
-    transform: rotateX(var(--rotateX, 0deg)) rotateY(var(--rotateY, 0deg));
+  @media (hover: hover) and (pointer: fine) {
+    .tilt-card:hover {
+      transform: rotateX(var(--rotateX, 0deg)) rotateY(var(--rotateY, 0deg));
+    }
   }
 
   .floating-label-group {
@@ -312,7 +326,7 @@ body {
 
   .floating-label-group input,
   .floating-label-group textarea {
-    transition: all 0.3s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
 
   .floating-label-group label {
@@ -320,7 +334,7 @@ body {
     left: 16px;
     top: 50%;
     transform: translateY(-50%);
-    transition: all 0.3s ease;
+    transition: top 0.2s var(--ease-out), transform 0.2s var(--ease-out), font-size 0.2s var(--ease-out), padding 0.2s var(--ease-out), color 0.2s ease;
     pointer-events: none;
     color: rgb(var(--muted-foreground));
   }
@@ -351,7 +365,7 @@ body {
   }
 
   .progress-ring circle {
-    transition: stroke-dashoffset 1s ease-in-out;
+    transition: stroke-dashoffset 0.8s var(--ease-in-out);
   }
 
   .nav-link {
@@ -369,7 +383,12 @@ body {
     transition: width 0.3s ease;
   }
 
-  .nav-link:hover::after,
+  @media (hover: hover) and (pointer: fine) {
+    .nav-link:hover::after {
+      width: 100%;
+    }
+  }
+
   .nav-link.active::after {
     width: 100%;
   }
@@ -442,11 +461,13 @@ body {
 
   .card-3d {
     transform-style: preserve-3d;
-    transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: transform 0.4s var(--ease-out);
   }
 
-  .card-3d:hover {
-    transform: translateZ(20px) rotateX(5deg) rotateY(-5deg);
+  @media (hover: hover) and (pointer: fine) {
+    .card-3d:hover {
+      transform: translateZ(20px) rotateX(5deg) rotateY(-5deg);
+    }
   }
 
   .card-3d-content {
@@ -474,8 +495,10 @@ body {
     pointer-events: none;
   }
 
-  .spotlight:hover::before {
-    opacity: 1;
+  @media (hover: hover) and (pointer: fine) {
+    .spotlight:hover::before {
+      opacity: 1;
+    }
   }
 
   .border-beam {

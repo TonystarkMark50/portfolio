@@ -11,6 +11,7 @@ const classicStyles = StyleSheet.create({
   contactRow: { flexDirection: 'row', flexWrap: 'wrap', fontSize: 9, color: '#333333', marginTop: 3, alignItems: 'center' },
   contactItemContainer: { flexDirection: 'row', alignItems: 'center', marginRight: 8 },
   contactIcon: { width: 10, height: 10, marginRight: 4 },
+  contactItem: { fontSize: 9, color: '#333333' },
   section: { marginBottom: 10 },
   sectionTitle: { fontSize: 11, fontWeight: 'bold', letterSpacing: 0.5, borderBottomWidth: 0.5, borderBottomColor: '#000000', borderBottomStyle: 'solid', paddingBottom: 1, marginBottom: 5, textTransform: 'uppercase' as const },
   paragraph: { fontSize: 10, lineHeight: 1.4, marginBottom: 3, color: '#000000' },
@@ -39,6 +40,7 @@ const modernStyles = StyleSheet.create({
   contactRow: { flexDirection: 'row', flexWrap: 'wrap', fontSize: 9, color: '#4a4a6a', marginTop: 2, alignItems: 'center' },
   contactItemContainer: { flexDirection: 'row', alignItems: 'center', marginRight: 8 },
   contactIcon: { width: 10, height: 10, marginRight: 4 },
+  contactItem: { fontSize: 9, color: '#4a4a6a' },
   section: { marginBottom: 12 },
   sectionTitle: { fontSize: 11, fontWeight: 'bold', letterSpacing: 1, color: '#1a1a2e', marginBottom: 6, textTransform: 'uppercase' as const },
   paragraph: { fontSize: 10, lineHeight: 1.5, marginBottom: 3, color: '#333344' },
@@ -67,6 +69,7 @@ const corporateStyles = StyleSheet.create({
   contactRow: { flexDirection: 'row', flexWrap: 'wrap', fontSize: 9, color: '#cbd5e1', marginTop: 2, alignItems: 'center' },
   contactItemContainer: { flexDirection: 'row', alignItems: 'center', marginRight: 8 },
   contactIcon: { width: 10, height: 10, marginRight: 4 },
+  contactItem: { fontSize: 9, color: '#cbd5e1' },
   section: { marginBottom: 10 },
   sectionTitle: { fontSize: 10, fontWeight: 'bold', letterSpacing: 0.5, color: '#1e293b', marginBottom: 4, textTransform: 'uppercase' as const },
   paragraph: { fontSize: 10, lineHeight: 1.4, marginBottom: 3, color: '#475569' },
@@ -87,7 +90,7 @@ const corporateStyles = StyleSheet.create({
   langText: { fontSize: 10, color: '#475569' },
 });
 
-const templateStyles: Record<ResumeTemplate, typeof classicStyles> = {
+const templateStyles = {
   classic: classicStyles,
   modern: modernStyles,
   corporate: corporateStyles,

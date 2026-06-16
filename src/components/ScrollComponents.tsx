@@ -19,7 +19,7 @@ export function BackToTop() {
   return (
     <button
       onClick={scrollToTop}
-      className={`fixed bottom-8 right-8 p-4 rounded-full glass z-50 transition-all duration-500 hover:scale-110 hover:shadow-glow group ${
+      className={`fixed bottom-8 right-8 p-4 rounded-full glass z-50 transition-[opacity,transform,box-shadow] duration-250 hover:scale-110 hover:shadow-glow group ${
         isVisible
           ? 'opacity-100 translate-y-0'
           : 'opacity-0 translate-y-10 pointer-events-none'

@@ -80,6 +80,7 @@ export interface ProjectItem {
   completedDate: string | null;
   highlights: string[];
   technologies: string[];
+  description: string | null;
   reportUrl: string | null;
 }
 
@@ -231,6 +232,7 @@ export async function loadProjects(): Promise<ProjectItem[] | null> {
       completedDate: p.completed_date || null,
       highlights: p.highlights,
       technologies: p.technologies,
+      description: p.description || null,
       reportUrl: p.report_url || null,
     }));
   }
@@ -277,24 +279,30 @@ export async function loadContactInfo(): Promise<{ email: string; location: stri
 }
 
 export async function loadResumeData(): Promise<ResumeData | null> {
-  const [profile, education, internship, projects, skills, certifications] = await Promise.all([
+  const [profile, education, internship, projects, skills, certifications, aboutData] = await Promise.all([
     loadProfile(),
     loadEducation(),
     loadInternships(),
     loadProjects(),
     loadSkills(),
     loadCertifications(),
+    loadAbout(),
   ]);
 
   if (!profile) return null;
 
   let summaryText = '';
-  try {
-    const { data: settings } = await supabase.from('site_settings').select('resume_summary').limit(1).maybeSingle();
-    if (settings && (settings as any).resume_summary) {
-      summaryText = (settings as any).resume_summary;
-    }
-  } catch { /* ignore */ } 
+  if (aboutData && aboutData.content.length > 0) {
+    summaryText = aboutData.content.join('\n\n');
+  }
+  if (!summaryText) {
+    try {
+      const { data: settings } = await supabase.from('site_settings').select('resume_summary').limit(1).maybeSingle();
+      if (settings && (settings as any).resume_summary) {
+        summaryText = (settings as any).resume_summary;
+      }
+    } catch { /* ignore */ }
+  }
 
   return {
     personalInfo: profile,
