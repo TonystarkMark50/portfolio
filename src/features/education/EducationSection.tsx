@@ -32,7 +32,7 @@ export default function Education() {
             <span className="inline-block px-4 py-1.5 rounded-full text-sm font-medium glass-card text-primary-500 mb-4">
               Academic Background
             </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-theme-primary mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-theme-primary mb-4 text-balance">
               <span className="gradient-text">Education</span> & Learning
             </h2>
             <p className="max-w-2xl mx-auto text-theme-muted text-lg">

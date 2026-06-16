@@ -133,7 +133,7 @@ export default function Hero() {
     <section
       id="home"
       ref={sectionRef}
-      className="relative min-h-screen flex flex-col justify-center overflow-hidden"
+      className="relative min-h-dvh flex flex-col justify-center overflow-hidden"
     >
       {/* Background layer */}
       <div className="absolute inset-0 mesh-bg" />
@@ -177,7 +177,9 @@ export default function Hero() {
             ) : (
               <img
                 src={profile.avatar_url}
-                alt={profile.name || 'Profile'}
+                alt={`${profile.name} profile photo`}
+                width={160}
+                height={160}
                 className="w-full h-full object-cover object-center"
                 loading="lazy"
                 onError={() => setImgError(true)}
@@ -196,7 +198,7 @@ export default function Hero() {
           >
             {/* 1. Full Name */}
             <motion.div variants={itemVariants} className="mb-6">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-7xl font-black tracking-tight leading-[1.1]">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-7xl font-black tracking-tight leading-[1.1] text-balance">
                 <span className="whitespace-nowrap bg-gradient-to-r from-primary-500 via-accent-500 to-primary-500 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
                   {profile.name}
                 </span>
@@ -227,7 +229,7 @@ export default function Hero() {
             <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-5 mt-4 mb-10">
               <a
                 href="#projects"
-                className="relative group inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold text-white bg-gray-900 dark:bg-white dark:text-gray-900 overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+                className="relative group inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold text-white bg-gray-900 dark:bg-white dark:text-gray-900 overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl touch-action-manipulation"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-accent-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 relative z-10" />
@@ -250,7 +252,7 @@ export default function Hero() {
                 <button
                   onClick={() => setShowDownloadModal(true)}
                   disabled={isGenerating}
-                  className="relative inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold text-white bg-gradient-to-r from-primary-500 to-accent-500 overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-glow disabled:opacity-70 disabled:cursor-wait"
+                  className="relative inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold text-white bg-gradient-to-r from-primary-500 to-accent-500 overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-glow disabled:opacity-70 disabled:cursor-wait touch-action-manipulation"
                 >
                   <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   {isGenerating ? (
@@ -274,7 +276,7 @@ export default function Hero() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="GitHub Profile"
-                className="p-2.5 sm:p-3 rounded-xl bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-gray-200/50 dark:border-white/10 hover:border-primary-500/50 hover:scale-110 transition-all duration-300"
+                className="min-w-[44px] min-h-[44px] p-2.5 sm:p-3 rounded-xl bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-gray-200/50 dark:border-white/10 hover:border-primary-500/50 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center"
               >
                 <Github className="w-4 h-4 sm:w-5 sm:h-5 text-theme-muted" />
               </a>
@@ -283,14 +285,14 @@ export default function Hero() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="LinkedIn Profile"
-                className="p-2.5 sm:p-3 rounded-xl bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-gray-200/50 dark:border-white/10 hover:border-primary-500/50 hover:scale-110 transition-all duration-300"
+                className="min-w-[44px] min-h-[44px] p-2.5 sm:p-3 rounded-xl bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-gray-200/50 dark:border-white/10 hover:border-primary-500/50 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center"
               >
                 <Linkedin className="w-4 h-4 sm:w-5 sm:h-5 text-theme-muted" />
               </a>
               <a
                 href={`mailto:${profile.email}`}
                 aria-label="Send Email"
-                className="p-2.5 sm:p-3 rounded-xl bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-gray-200/50 dark:border-white/10 hover:border-primary-500/50 hover:scale-110 transition-all duration-300"
+                className="min-w-[44px] min-h-[44px] p-2.5 sm:p-3 rounded-xl bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-gray-200/50 dark:border-white/10 hover:border-primary-500/50 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center"
               >
                 <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-theme-muted" />
               </a>
@@ -328,7 +330,9 @@ export default function Hero() {
                   ) : (
                     <img
                       src={profile.avatar_url}
-                      alt={profile.name || 'Profile'}
+                      alt={`${profile.name} profile photo`}
+                      width={288}
+                      height={288}
                       className="w-full h-full object-cover object-center"
                       loading="lazy"
                       onError={() => setImgError(true)}
@@ -350,7 +354,11 @@ export default function Hero() {
         transition={{ delay: 1.5 }}
       >
         <motion.div
-          className="flex flex-col items-center gap-1 text-theme-muted cursor-pointer"
+          role="button"
+          tabIndex={0}
+          aria-label="Scroll down to explore"
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' }); }}
+          className="flex flex-col items-center gap-1 text-theme-muted cursor-pointer min-h-[44px] justify-center"
           animate={{ y: [0, 4, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
           onClick={() => {

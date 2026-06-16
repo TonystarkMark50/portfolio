@@ -27,7 +27,7 @@ export default function Skills() {
               </span>
             </div>
 
-            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-theme-primary mb-6 tracking-tight">
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-theme-primary mb-6 tracking-tight text-balance">
               Skills & <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-purple-500">Expertise</span>
             </h2>
 
@@ -42,20 +42,24 @@ export default function Skills() {
             return (
               <div
                 key={category.title}
-                className={`group p-6 rounded-2xl bg-white dark:bg-slate-800/50 border border-gray-200/50 dark:border-slate-700/50 transition-[transform,box-shadow,opacity] duration-250 hover:-translate-y-1 hover:shadow-xl ${
+                className={`group p-6 rounded-2xl bg-white dark:bg-slate-800/50 border border-gray-200/50 dark:border-slate-700/50 transition-[transform,box-shadow,opacity,border-color] duration-250 hover:-translate-y-2 hover:shadow-xl hover:border-violet-200/60 dark:hover:border-violet-700/40 active:scale-[0.98] ${
                   isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                 }`}
                 style={{ transitionDelay: `${index * 80}ms` }}
               >
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${category.gradient} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${category.gradient} flex items-center justify-center mb-5 group-hover:scale-110 group-hover:shadow-lg transition-[transform,box-shadow] duration-300`}>
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="text-lg font-bold text-theme-primary mb-4">
                   {category.title}
                 </h3>
                 <ul className="space-y-2.5">
-                  {category.skills.map((skill) => (
-                    <li key={skill} className="flex items-center gap-2.5">
+                  {category.skills.map((skill, skillIndex) => (
+                    <li
+                      key={skill}
+                      className="flex items-center gap-2.5 rounded-lg px-2 py-1 -mx-2 transition-[background,transform] duration-150 hover:bg-violet-50 dark:hover:bg-violet-900/10 hover:-translate-y-px"
+                      style={{ transitionDelay: `${skillIndex * 20}ms` }}
+                    >
                       <span className="w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
                       <span className="text-sm text-theme-secondary">{skill}</span>
                     </li>

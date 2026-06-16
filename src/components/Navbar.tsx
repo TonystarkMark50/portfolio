@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Menu, X, Github, Linkedin, Mail, Download } from 'lucide-react';
 import { useActiveSection } from '../hooks/useScroll';
 import { useSupabaseData } from '../hooks/usePortfolioData';
@@ -29,6 +29,8 @@ export default function Navbar() {
   const { data: profile } = useSupabaseData(loadProfile);
   const { data: contactInfo } = useSupabaseData(loadContactInfo);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
+  const mobileDrawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -40,6 +42,41 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+
+    const drawer = mobileDrawerRef.current;
+    if (!drawer) return;
+
+    const focusable = drawer.querySelectorAll<HTMLElement>(
+      'a, button, [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleTab);
+    first?.focus();
+    return () => {
+      document.removeEventListener('keydown', handleTab);
+      hamburgerRef.current?.focus();
+    };
+  }, [isMobileMenuOpen]);
 
   const handleResumeClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -136,7 +173,7 @@ export default function Navbar() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="GitHub Profile"
-              className="p-2 rounded-xl hover:bg-gray-100/50 dark:hover:bg-white/5 border border-transparent hover:border-gray-200/50 dark:hover:border-white/10 transition-[background,border-color] duration-200"
+              className="min-w-[44px] min-h-[44px] p-2 rounded-xl hover:bg-gray-100/50 dark:hover:bg-white/5 border border-transparent hover:border-gray-200/50 dark:hover:border-white/10 transition-[background,border-color] duration-200 flex items-center justify-center"
             >
               <Github className="w-5 h-5 text-theme-secondary" />
             </a>
@@ -145,7 +182,7 @@ export default function Navbar() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn Profile"
-              className="p-2 rounded-xl hover:bg-gray-100/50 dark:hover:bg-white/5 border border-transparent hover:border-gray-200/50 dark:hover:border-white/10 transition-[background,border-color] duration-200"
+              className="min-w-[44px] min-h-[44px] p-2 rounded-xl hover:bg-gray-100/50 dark:hover:bg-white/5 border border-transparent hover:border-gray-200/50 dark:hover:border-white/10 transition-[background,border-color] duration-200 flex items-center justify-center"
             >
               <Linkedin className="w-5 h-5 text-theme-secondary" />
             </a>
@@ -153,9 +190,13 @@ export default function Navbar() {
             <ThemeToggle />
 
             <button
+              ref={hamburgerRef}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl hover:bg-gray-100/50 dark:hover:bg-white/5 border border-transparent hover:border-gray-200/50 dark:hover:border-white/10 transition-[background,border-color] duration-200"
-              aria-label="Toggle menu"
+              className="lg:hidden min-w-[44px] min-h-[44px] p-2 rounded-xl hover:bg-gray-100/50 dark:hover:bg-white/5 border border-transparent hover:border-gray-200/50 dark:hover:border-white/10 transition-[background,border-color] duration-200 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
+              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-nav"
+              style={{ touchAction: 'manipulation' }}
             >
               {isMobileMenuOpen ? (
                 <X className="w-6 h-6 text-theme-secondary" />
@@ -179,9 +220,14 @@ export default function Navbar() {
           onClick={() => setIsMobileMenuOpen(false)}
         />
         <div
+          ref={mobileDrawerRef}
+          id="mobile-nav"
           className={`absolute top-0 right-0 h-full w-72 max-w-[85vw] bg-white/90 dark:bg-dark-950/90 backdrop-blur-2xl shadow-2xl transform transition-[transform] duration-250 border-l border-gray-200/50 dark:border-gray-800/50 ${
             isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation menu"
         >
           <div className="p-6 pt-20 flex flex-col gap-2">
             {navItems.map((item, index) => (

@@ -3,10 +3,15 @@ import { ArrowUp } from 'lucide-react';
 
 export function BackToTop() {
   const [isVisible, setIsVisible] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsVisible(window.scrollY > 500);
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? Math.min((scrollTop / docHeight) * 100, 100) : 0;
+      setScrollProgress(progress);
+      setIsVisible(scrollTop > 500);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
@@ -16,17 +21,58 @@ export function BackToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const radius = 18;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (scrollProgress / 100) * circumference;
+
   return (
     <button
       onClick={scrollToTop}
-      className={`fixed bottom-8 right-8 p-4 rounded-full glass z-50 transition-[opacity,transform,box-shadow] duration-250 hover:scale-110 hover:shadow-glow group ${
+      className={`fixed bottom-8 right-8 w-12 h-12 rounded-full glass z-50 transition-[opacity,transform,box-shadow] duration-300 hover:scale-110 hover:shadow-lg active:scale-95 group flex items-center justify-center touch-action-manipulation ${
         isVisible
           ? 'opacity-100 translate-y-0'
           : 'opacity-0 translate-y-10 pointer-events-none'
       }`}
+      style={{ touchAction: 'manipulation' }}
       aria-label="Back to top"
     >
-      <ArrowUp className="w-5 h-5 text-theme-secondary group-hover:text-primary-500 transition-colors" />
+      {/* Scroll progress ring */}
+      <svg
+        className="absolute inset-0 w-full h-full -rotate-90"
+        viewBox="0 0 48 48"
+        aria-hidden="true"
+      >
+        {/* Track */}
+        <circle
+          cx="24"
+          cy="24"
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className="text-gray-300/40 dark:text-slate-600/40"
+        />
+        {/* Progress */}
+        <circle
+          cx="24"
+          cy="24"
+          r={radius}
+          fill="none"
+          stroke="url(#progressGradient)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          style={{ transition: 'stroke-dashoffset 0.15s ease-out' }}
+        />
+        <defs>
+          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#0ea5e9" />
+            <stop offset="100%" stopColor="#8b5cf6" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <ArrowUp className="w-4 h-4 text-theme-secondary group-hover:text-primary-500 transition-colors relative z-10" />
     </button>
   );
 }
@@ -46,13 +92,13 @@ export function Footer() {
 
           {/* Links */}
           <div className="flex justify-center gap-8">
-            <a href="#home" className="text-theme-muted hover:text-primary-500 transition-colors">
+            <a href="#home" className="text-theme-muted hover:text-primary-500 transition-colors min-h-[44px] flex items-center">
               Home
             </a>
-            <a href="#projects" className="text-theme-muted hover:text-primary-500 transition-colors">
+            <a href="#projects" className="text-theme-muted hover:text-primary-500 transition-colors min-h-[44px] flex items-center">
               Projects
             </a>
-            <a href="#contact" className="text-theme-muted hover:text-primary-500 transition-colors">
+            <a href="#contact" className="text-theme-muted hover:text-primary-500 transition-colors min-h-[44px] flex items-center">
               Contact
             </a>
           </div>

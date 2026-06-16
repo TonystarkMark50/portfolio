@@ -182,7 +182,7 @@ export default function Certifications() {
               <Trophy className="w-4 h-4" />
               Professional Certifications
             </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-theme-primary mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-theme-primary mb-4 text-balance">
               Certifications & <span className="gradient-text">Professional Learning</span>
             </h2>
             <p className="max-w-2xl mx-auto text-theme-muted text-lg">

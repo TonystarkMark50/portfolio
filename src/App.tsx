@@ -21,8 +21,18 @@ const AdminPanel = lazy(() => import('./pages/AdminApp'));
 
 function SectionFallback() {
   return (
-    <div className="h-64 flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+    <div className="w-full py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto" aria-hidden="true">
+      <div className="space-y-4">
+        <div className="h-8 w-48 rounded-xl bg-gray-200 dark:bg-slate-800 shimmer" />
+        <div className="h-4 w-full rounded-lg bg-gray-200 dark:bg-slate-800 shimmer" />
+        <div className="h-4 w-5/6 rounded-lg bg-gray-200 dark:bg-slate-800 shimmer" />
+        <div className="h-4 w-4/6 rounded-lg bg-gray-200 dark:bg-slate-800 shimmer" />
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-40 rounded-2xl bg-gray-200 dark:bg-slate-800 shimmer" />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -47,7 +57,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function MainSite() {
   return (
-    <main className="relative">
+    <main id="main-content" className="relative">
       <Suspense fallback={<SectionFallback />}>
         <ErrorBoundary sectionName="Hero">
           <Hero />
@@ -130,6 +140,12 @@ function AppContent() {
         path="/*"
         element={
           <>
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-primary-500 focus:text-white focus:rounded-lg focus:font-medium focus:shadow-lg"
+            >
+              Skip to main content
+            </a>
             <Navbar />
             <MainSite />
             <Footer />

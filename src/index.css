@@ -85,6 +85,10 @@ body {
   overflow-x: hidden;
 }
 
+button, a[role="button"] {
+  touch-action: manipulation;
+}
+
 ::selection {
   background: rgba(14, 165, 233, 0.3);
   color: inherit;
@@ -197,6 +201,11 @@ body {
   .magnetic-btn {
     position: relative;
     transition: transform 0.25s var(--ease-out);
+    touch-action: manipulation;
+  }
+
+  .magnetic-btn:active {
+    transform: scale(0.97);
   }
 
   .magnetic-btn::after {
@@ -376,11 +385,13 @@ body {
     content: '';
     position: absolute;
     bottom: -4px;
-    left: 0;
+    left: 50%;
+    transform: translateX(-50%);
     width: 0;
     height: 2px;
     background: linear-gradient(90deg, var(--gradient-start), var(--gradient-mid));
     transition: width 0.3s ease;
+    transform-origin: center;
   }
 
   @media (hover: hover) and (pointer: fine) {
@@ -468,6 +479,10 @@ body {
     .card-3d:hover {
       transform: translateZ(20px) rotateX(5deg) rotateY(-5deg);
     }
+  }
+
+  .card-3d:active {
+    transform: scale(0.98);
   }
 
   .card-3d-content {
@@ -620,6 +635,14 @@ body {
     will-change: transform;
   }
 
+  .min-h-dvh {
+    min-height: 100dvh;
+  }
+
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
   .perspective-1000 {
     perspective: 1000px;
   }
@@ -640,6 +663,18 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .aurora-bg::before {
+    animation-play-state: paused !important;
+  }
+
+  .card-3d:hover {
+    transform: none !important;
+  }
+
+  .tilt-card:hover {
+    transform: none !important;
   }
 }
 

@@ -1,12 +1,11 @@
 import { useState, useRef, useCallback } from 'react';
-import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { Send, Mail, MapPin, Clock, ArrowRight, Github, Linkedin, Sparkles, CheckCircle, AlertCircle } from 'lucide-react';
 import Section from '../../components/Section';
 import { useSupabaseData } from '../../hooks/usePortfolioData';
 import { loadContactInfo } from '../../lib/loaders';
 import { submitContactForm } from '../../lib/supabase';
 
-import { WEB3FORMS_ACCESS_KEY, WEB3FORMS_URL, TURNSTILE_SITE_KEY } from '../../config/app';
+import { WEB3FORMS_ACCESS_KEY, WEB3FORMS_URL } from '../../config/app';
 
 interface FormErrors {
   name?: string;
@@ -60,17 +59,22 @@ export default function Contact() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [captchaError, setCaptchaError] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
-  const turnstileRef = useRef<TurnstileInstance>(null);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const handleChange = useCallback((field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
     setSubmitStatus((prev) => prev !== 'idle' ? 'idle' : prev);
-    setCaptchaError(false);
   }, []);
+
+  const handleBlur = useCallback((field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const fieldErrors = validateForm(formData);
+    if (fieldErrors[field as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [field]: fieldErrors[field as keyof FormErrors] }));
+    }
+  }, [formData]);
   if (!contactInfoData) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,11 +87,6 @@ export default function Contact() {
     if (Object.keys(validationErrors).length > 0) {
       const firstErrorField = Object.keys(validationErrors)[0] as keyof FormErrors;
       if (firstErrorField === 'name') nameRef.current?.focus();
-      return;
-    }
-
-    if (!turnstileToken) {
-      setCaptchaError(true);
       return;
     }
 
@@ -108,7 +107,6 @@ export default function Contact() {
         email: formData.email,
         subject: formData.subject,
         message: formData.message,
-        turnstile_token: turnstileToken,
       };
 
       let web3formsOk = false;
@@ -129,8 +127,6 @@ export default function Contact() {
       setSubmitStatus('success');
       setFormData({ name: '', email: '', subject: '', message: '' });
       setErrors({});
-      setTurnstileToken(null);
-      turnstileRef.current?.reset();
     } catch {
       setSubmitStatus('error');
     } finally {
@@ -168,7 +164,7 @@ export default function Contact() {
             </span>
           </div>
 
-          <h2 className="text-4xl sm:text-5xl font-bold text-theme-primary mb-6 tracking-tight">
+          <h2 className="text-4xl sm:text-5xl font-bold text-theme-primary mb-6 tracking-tight text-balance">
             Let's{' '}
             <span className="bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">
               Connect
@@ -260,6 +256,7 @@ export default function Contact() {
                   placeholder="John Doe"
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}
+                  onBlur={() => handleBlur('name')}
                   aria-invalid={!!errors.name}
                   aria-describedby={errors.name ? 'name-error' : undefined}
                   className={`w-full px-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-slate-800 border-2 outline-none transition-all duration-200 text-theme-primary placeholder:text-theme-muted focus:ring-4 focus:ring-violet-500/20 ${
@@ -289,6 +286,7 @@ export default function Contact() {
                   placeholder="john@example.com"
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
+                  onBlur={() => handleBlur('email')}
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? 'email-error' : undefined}
                   className={`w-full px-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-slate-800 border-2 outline-none transition-all duration-200 text-theme-primary placeholder:text-theme-muted focus:ring-4 focus:ring-violet-500/20 ${
@@ -318,6 +316,7 @@ export default function Contact() {
                   placeholder="Collaboration Opportunity"
                   value={formData.subject}
                   onChange={(e) => handleChange('subject', e.target.value)}
+                  onBlur={() => handleBlur('subject')}
                   aria-invalid={!!errors.subject}
                   aria-describedby={errors.subject ? 'subject-error' : undefined}
                   className={`w-full px-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-slate-800 border-2 outline-none transition-all duration-200 text-theme-primary placeholder:text-theme-muted focus:ring-4 focus:ring-violet-500/20 ${
@@ -346,8 +345,9 @@ export default function Contact() {
                   rows={5}
                   value={formData.message}
                   onChange={(e) => handleChange('message', e.target.value)}
+                  onBlur={() => handleBlur('message')}
                   aria-invalid={!!errors.message}
-                  aria-describedby={errors.message ? 'message-error' : undefined}
+                  aria-describedby={`${errors.message ? 'message-error ' : ''}message-counter`}
                   className={`w-full px-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-slate-800 border-2 outline-none transition-all duration-200 text-theme-primary placeholder:text-theme-muted resize-none focus:ring-4 focus:ring-violet-500/20 ${
                     errors.message
                       ? 'border-red-400 dark:border-red-500'
@@ -361,36 +361,18 @@ export default function Contact() {
                       {errors.message}
                     </p>
                   )}
-                  <p className={`text-xs ml-auto ${formData.message.length > MAX_LENGTH ? 'text-red-500' : 'text-theme-muted'}`}>
+                  <p id="message-counter" className={`text-xs ml-auto ${formData.message.length > MAX_LENGTH ? 'text-red-500' : 'text-theme-muted'}`}>
                     {formData.message.length.toLocaleString()} / {MAX_LENGTH.toLocaleString()}
                   </p>
                 </div>
               </div>
 
-              <div className="pt-2">
-                <Turnstile
-                  ref={turnstileRef}
-                  siteKey={TURNSTILE_SITE_KEY}
-                  onSuccess={(token) => {
-                    setTurnstileToken(token);
-                    setCaptchaError(false);
-                  }}
-                  onExpire={() => setTurnstileToken(null)}
-                  onError={() => setTurnstileToken(null)}
-                  options={{ theme: 'auto', size: 'flexible' }}
-                />
-                {captchaError && (
-                  <p id="captcha-error" className="mt-1.5 text-sm text-red-500 flex items-center gap-1" role="alert">
-                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                    Please complete the security check.
-                  </p>
-                )}
-              </div>
+
 
               <button
                 type="submit"
-                disabled={isSubmitting || !turnstileToken}
-                className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-semibold text-white bg-gray-900 dark:bg-white dark:text-gray-900 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 focus:outline-none focus:ring-4 focus:ring-gray-900/30 dark:focus:ring-white/30"
+                disabled={isSubmitting}
+                className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-semibold text-white bg-gray-900 dark:bg-white dark:text-gray-900 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 focus:outline-none focus:ring-4 focus:ring-gray-900/30 dark:focus:ring-white/30 touch-action-manipulation"
                 aria-busy={isSubmitting}
               >
                 {isSubmitting ? (
@@ -414,6 +396,7 @@ export default function Contact() {
                 <div
                   className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/30 animate-in"
                   role="alert"
+                  aria-live="polite"
                 >
                   <div className="flex items-start gap-3">
                     <CheckCircle className="w-6 h-6 text-emerald-500 flex-shrink-0 mt-0.5" />
@@ -433,6 +416,7 @@ export default function Contact() {
                 <div
                   className="p-5 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30"
                   role="alert"
+                  aria-live="polite"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">

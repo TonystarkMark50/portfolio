@@ -26,7 +26,7 @@ export default function Projects() {
           </span>
         </div>
 
-        <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-theme-primary mb-6 tracking-tight">
+        <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-theme-primary mb-6 tracking-tight text-balance">
           Academic <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-purple-500">Projects</span>
         </h2>
 
@@ -40,7 +40,7 @@ export default function Projects() {
           const technologies = project.technologies;
           const highlights = project.highlights;
           return (
-            <div key={project.id} className="group relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 transition-[box-shadow,border-color] duration-250 shadow-xl hover:shadow-2xl hover:border-violet-300 dark:hover:border-violet-700">
+            <div key={project.id} className="group relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 transition-[box-shadow,border-color] duration-250 shadow-xl hover:shadow-2xl hover:border-violet-300 dark:hover:border-violet-700">
               <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-violet-500/5 to-purple-500/5 pointer-events-none" />
 
               <div className="relative z-10 p-8 md:p-12">

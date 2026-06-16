@@ -31,7 +31,7 @@ export default function About() {
                 About Me
               </span>
             </div>
-            <h2 className="text-4xl sm:text-5xl font-bold text-theme-primary mb-6 tracking-tight">
+            <h2 className="text-4xl sm:text-5xl font-bold text-theme-primary mb-6 tracking-tight text-balance">
               Biomedical Engineering{' '}
               <span className="bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">Student</span>
             </h2>
