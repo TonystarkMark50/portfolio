@@ -4,17 +4,6 @@ jest.mock('../src/lib/supabase', () => ({
   getResumeDownloadCount: jest.fn(),
 }))
 
-jest.mock('../src/services/supabaseClient', () => ({
-  from: jest.fn().mockReturnThis(),
-  insert: jest.fn().mockResolvedValue({ data: null, error: null }),
-  select: jest.fn().mockReturnThis(),
-  __esModule: true,
-  default: {
-    from: jest.fn().mockReturnThis(),
-    insert: jest.fn().mockResolvedValue({ data: null, error: null }),
-  },
-}))
-
 jest.mock('../src/services/helpers', () => ({
   getSingle: jest.fn(),
   upsert: jest.fn(),
