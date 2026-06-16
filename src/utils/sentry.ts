@@ -1,12 +1,12 @@
-import * as Sentry from '@sentry/react'
 import logger from './logger'
 
-const initSentry = () => {
+const initSentry = async () => {
   if (!import.meta.env.VITE_SENTRY_DSN) {
     logger.warn('Sentry DSN not configured')
     return
   }
 
+  const Sentry = await import('@sentry/react')
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
     tracesSampleRate: import.meta.env.DEV ? 1.0 : 0.1,

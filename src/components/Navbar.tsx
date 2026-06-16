@@ -72,9 +72,10 @@ export default function Navbar() {
 
     document.addEventListener('keydown', handleTab);
     first?.focus();
+    const hamburgerEl = hamburgerRef.current;
     return () => {
       document.removeEventListener('keydown', handleTab);
-      hamburgerRef.current?.focus();
+      hamburgerEl?.focus();
     };
   }, [isMobileMenuOpen]);
 

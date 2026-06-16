@@ -134,15 +134,21 @@ function AppContent() {
       <SentryInit />
       <ScrollToTop />
       <Routes>
-      <Route path="/admin/login" element={<Suspense fallback={<SectionFallback />}><AdminLogin /></Suspense>} />
+      <Route path="/admin/login" element={
+        <AdminProvider>
+          <Suspense fallback={<SectionFallback />}><AdminLogin /></Suspense>
+        </AdminProvider>
+      } />
       <Route
         path="/admin/*"
         element={
-          <Suspense fallback={<SectionFallback />}>
-            <ProtectedRoute>
-              <AdminPanel />
-            </ProtectedRoute>
-          </Suspense>
+          <AdminProvider>
+            <Suspense fallback={<SectionFallback />}>
+              <ProtectedRoute>
+                <AdminPanel />
+              </ProtectedRoute>
+            </Suspense>
+          </AdminProvider>
         }
       />
       <Route
@@ -171,9 +177,7 @@ function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
-        <AdminProvider>
-          <AppContent />
-        </AdminProvider>
+        <AppContent />
       </BrowserRouter>
     </ThemeProvider>
   );

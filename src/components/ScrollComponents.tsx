@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { ArrowUp } from 'lucide-react';
 
-export function BackToTop() {
+export const BackToTop = memo(function BackToTop() {
   const [isVisible, setIsVisible] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
 
@@ -75,9 +75,11 @@ export function BackToTop() {
       <ArrowUp className="w-4 h-4 text-theme-secondary group-hover:text-primary-500 transition-colors relative z-10" />
     </button>
   );
-}
+});
 
-export function Footer() {
+const currentYear = new Date().getFullYear();
+
+export const Footer = memo(function Footer() {
   return (
     <footer className="relative py-12 bg-gray-100 dark:bg-dark-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -109,11 +111,11 @@ export function Footer() {
               Built with care and attention to detail
             </p>
             <p className="text-xs text-theme-muted mt-1">
-              {new Date().getFullYear()} All rights reserved.
+              {currentYear} All rights reserved.
             </p>
           </div>
         </div>
       </div>
     </footer>
   );
-}
+});

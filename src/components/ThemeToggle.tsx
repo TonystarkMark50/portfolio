@@ -1,10 +1,11 @@
+import { memo } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
 
 const springEasing = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
 const trackW = 52, trackH = 28, thumbSize = 22, gutter = 3;
 
-export default function ThemeToggle() {
+function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
   const thumbPos = isDark ? trackW - thumbSize - gutter : gutter;
@@ -73,3 +74,5 @@ export default function ThemeToggle() {
     </button>
   );
 }
+
+export default memo(ThemeToggle);

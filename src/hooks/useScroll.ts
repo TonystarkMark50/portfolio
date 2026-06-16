@@ -28,25 +28,26 @@ export function useActiveSection(sectionIds: string[]) {
   const [activeSection, setActiveSection] = useState('');
 
   useEffect(() => {
-    const handleScroll = () => {
-      const offset = 80 + 100;
-      const scrollPos = window.scrollY + offset;
+    const sections = sectionIds
+      .map(id => document.getElementById(id))
+      .filter(Boolean) as HTMLElement[];
 
-      let current = '';
-      for (const id of sectionIds) {
-        const el = document.getElementById(id);
-        if (el && el.offsetTop <= scrollPos) {
-          current = id;
+    if (sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => (a.boundingClientRect.top > b.boundingClientRect.top ? 1 : -1));
+        if (visible.length > 0) {
+          setActiveSection(visible[0].target.id);
         }
-      }
+      },
+      { threshold: 0, rootMargin: '-80px 0px -40% 0px' }
+    );
 
-      setActiveSection(current);
-    };
-
-    handleScroll();
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    sections.forEach(el => observer.observe(el));
+    return () => observer.disconnect();
   }, [sectionIds]);
 
   return activeSection;
@@ -54,14 +55,21 @@ export function useActiveSection(sectionIds: string[]) {
 
 export function useMousePosition() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const rafRef = useRef<number>(0);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      setPosition({ x: e.clientX, y: e.clientY });
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        setPosition({ x: e.clientX, y: e.clientY });
+      });
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
   return position;

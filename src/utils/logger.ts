@@ -1,15 +1,8 @@
-import winston from 'winston'
-
-// Create a logger instance
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.Console()
-  ],
-})
+const logger = {
+  debug: (...args: unknown[]) => console.debug('[DEBUG]', ...args),
+  info: (...args: unknown[]) => console.info('[INFO]', ...args),
+  warn: (...args: unknown[]) => console.warn('[WARN]', ...args),
+  error: (...args: unknown[]) => console.error('[ERROR]', ...args),
+};
 
 export default logger;

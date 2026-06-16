@@ -1,29 +1,9 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useCallback, Suspense, lazy } from 'react';
 import { useAdmin } from '../context/AdminContext';
 import { ToastProvider } from '../context/ToastContext';
 import AdminLayout from '../components/admin/AdminLayout';
 import type { AdminTab } from '../components/admin/AdminLayout';
 import ErrorBoundary from '../components/ErrorBoundary';
-import AdminDashboard from '../admin/AdminDashboard';
-import AdminProfile from '../admin/AdminProfile';
-import AdminAbout from '../admin/AdminAbout';
-import AdminSkills from '../admin/AdminSkills';
-import AdminEducation from '../admin/AdminEducation';
-import AdminInternship from '../admin/AdminInternship';
-import AdminCertifications from '../admin/AdminCertifications';
-import AdminProjects from '../admin/AdminProjects';
-import AdminJourney from '../admin/AdminJourney';
-import AdminContacts from '../admin/AdminContacts';
-import AdminResume from '../admin/AdminResume';
-import AdminSettings from '../admin/AdminSettings';
-import AnalyticsCenter from '../admin/AnalyticsCenter';
-import NotificationCenter from '../features/notifications/NotificationCenter';
-import ContactInbox from '../features/contact-crm/ContactInbox';
-import MediaLibrary from '../features/media-library/MediaLibrary';
-import SEOManager from '../features/seo-manager/SEOManager';
-import AIAssistant from '../features/ai-assistant/AIAssistant';
-import GitHubIntegration from '../features/github/GitHubIntegration';
-import BackupManager from '../features/backup/BackupManager';
 
 const TAB_STORAGE_KEY = 'admin-active-tab';
 
@@ -32,6 +12,38 @@ const VALID_TABS = [
   'certifications','journey','contact','resume','media','settings','analytics',
   'notifications','crm','seo','ai','github','backup'
 ];
+
+const LazyDashboard = lazy(() => import('../admin/AdminDashboard'));
+const LazyProfile = lazy(() => import('../admin/AdminProfile'));
+const LazyAbout = lazy(() => import('../admin/AdminAbout'));
+const LazySkills = lazy(() => import('../admin/AdminSkills'));
+const LazyEducation = lazy(() => import('../admin/AdminEducation'));
+const LazyInternship = lazy(() => import('../admin/AdminInternship'));
+const LazyCertifications = lazy(() => import('../admin/AdminCertifications'));
+const LazyProjects = lazy(() => import('../admin/AdminProjects'));
+const LazyJourney = lazy(() => import('../admin/AdminJourney'));
+const LazyContacts = lazy(() => import('../admin/AdminContacts'));
+const LazyResume = lazy(() => import('../admin/AdminResume'));
+const LazySettings = lazy(() => import('../admin/AdminSettings'));
+const LazyAnalytics = lazy(() => import('../admin/AnalyticsCenter'));
+const LazyNotifications = lazy(() => import('../features/notifications/NotificationCenter'));
+const LazyCRM = lazy(() => import('../features/contact-crm/ContactInbox'));
+const LazyMedia = lazy(() => import('../features/media-library/MediaLibrary'));
+const LazySEO = lazy(() => import('../features/seo-manager/SEOManager'));
+const LazyAI = lazy(() => import('../features/ai-assistant/AIAssistant'));
+const LazyGitHub = lazy(() => import('../features/github/GitHubIntegration'));
+const LazyBackup = lazy(() => import('../features/backup/BackupManager'));
+
+function TabFallback() {
+  return (
+    <div className="min-h-[200px] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-gray-400">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 function AdminContent() {
   const { isAuthenticated, isLoading } = useAdmin();
@@ -47,29 +59,6 @@ function AdminContent() {
     setActiveTab(tab);
     localStorage.setItem(TAB_STORAGE_KEY, tab);
   }, []);
-
-  const sections = useMemo((): { tab: AdminTab; component: React.ReactNode }[] => [
-    { tab: 'dashboard', component: <AdminDashboard onNavigate={setActiveTab} /> },
-    { tab: 'profile', component: <AdminProfile /> },
-    { tab: 'about', component: <AdminAbout /> },
-    { tab: 'skills', component: <AdminSkills /> },
-    { tab: 'projects', component: <AdminProjects /> },
-    { tab: 'internship', component: <AdminInternship /> },
-    { tab: 'education', component: <AdminEducation /> },
-    { tab: 'certifications', component: <AdminCertifications /> },
-    { tab: 'journey', component: <AdminJourney /> },
-    { tab: 'contact', component: <AdminContacts /> },
-    { tab: 'resume', component: <AdminResume /> },
-    { tab: 'media', component: <MediaLibrary onNavigate={(t) => setActiveTab(t as AdminTab)} /> },
-    { tab: 'analytics', component: <AnalyticsCenter /> },
-    { tab: 'notifications', component: <NotificationCenter open onClose={() => setActiveTab('dashboard')} /> },
-    { tab: 'crm', component: <ContactInbox onNavigate={(t) => setActiveTab(t as AdminTab)} /> },
-    { tab: 'seo', component: <SEOManager onNavigate={(t) => setActiveTab(t as AdminTab)} /> },
-    { tab: 'ai', component: <AIAssistant onNavigate={(t) => setActiveTab(t as AdminTab)} /> },
-    { tab: 'github', component: <GitHubIntegration onNavigate={(t) => setActiveTab(t as AdminTab)} /> },
-    { tab: 'backup', component: <BackupManager onNavigate={(t) => setActiveTab(t as AdminTab)} /> },
-    { tab: 'settings', component: <AdminSettings /> },
-  ], []);
 
   if (isLoading) {
     return (
@@ -99,7 +88,31 @@ function AdminContent() {
     );
   }
 
-  const activeSection = sections.find(s => s.tab === activeTab);
+  const renderTab = () => {
+    switch (activeTab) {
+      case 'dashboard': return <LazyDashboard onNavigate={setActiveTab} />;
+      case 'profile': return <LazyProfile />;
+      case 'about': return <LazyAbout />;
+      case 'skills': return <LazySkills />;
+      case 'projects': return <LazyProjects />;
+      case 'internship': return <LazyInternship />;
+      case 'education': return <LazyEducation />;
+      case 'certifications': return <LazyCertifications />;
+      case 'journey': return <LazyJourney />;
+      case 'contact': return <LazyContacts />;
+      case 'resume': return <LazyResume />;
+      case 'media': return <LazyMedia onNavigate={(t) => setActiveTab(t as AdminTab)} />;
+      case 'analytics': return <LazyAnalytics />;
+      case 'notifications': return <LazyNotifications open onClose={() => setActiveTab('dashboard')} />;
+      case 'crm': return <LazyCRM onNavigate={(t) => setActiveTab(t as AdminTab)} />;
+      case 'seo': return <LazySEO onNavigate={(t) => setActiveTab(t as AdminTab)} />;
+      case 'ai': return <LazyAI onNavigate={(t) => setActiveTab(t as AdminTab)} />;
+      case 'github': return <LazyGitHub onNavigate={(t) => setActiveTab(t as AdminTab)} />;
+      case 'backup': return <LazyBackup onNavigate={(t) => setActiveTab(t as AdminTab)} />;
+      case 'settings': return <LazySettings />;
+      default: return <LazyDashboard onNavigate={setActiveTab} />;
+    }
+  };
 
   return (
     <AdminLayout activeTab={activeTab} onTabChange={handleTabChange}>
@@ -127,7 +140,9 @@ function AdminContent() {
           </div>
         }
       >
-        {activeSection?.component}
+        <Suspense fallback={<TabFallback />}>
+          {renderTab()}
+        </Suspense>
       </ErrorBoundary>
     </AdminLayout>
   );
