@@ -81,7 +81,7 @@ Remove any section you don't need, or add custom ones.
 - **Education** — degree, institution, GPA, timeline
 - **Certifications** — badge-style cards with logo, credential ID, and verification links
 - **Journey** — timeline view of your career story
-- **Contact** — form with Cloudflare Turnstile CAPTCHA, sends to Supabase
+- **Contact** — form with Zod validation, sends to Supabase + email via Web3Forms
 
 ### Admin Panel (Protected)
 - **Dashboard** — quick stats, recent activity, portfolio health score
@@ -122,8 +122,7 @@ Remove any section you don't need, or add custom ones.
 | **Validation** | Zod 4 |
 | **PDF Generation** | @react-pdf/renderer |
 | **Error Tracking** | Sentry (React SDK) |
-| **CAPTCHA** | Cloudflare Turnstile |
-| **Logging** | Winston (browser-compatible) |
+| **Logging** | Lightweight console wrapper |
 | **Testing** | Jest 30 + Testing Library |
 | **Linting** | ESLint 9 + typescript-eslint |
 | **Deployment** | Netlify (recommended) or Docker / nginx |

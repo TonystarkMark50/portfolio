@@ -7,6 +7,7 @@ import {
   ChevronRight, Zap, Moon,   MessageSquare, Bell
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import logger from '../utils/logger';
 import {
   getProjects, getSkills, getCertifications, getEducation, getInternships,
   getProfile, Profile, Project, Certification, Education as EduType,
@@ -125,7 +126,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
       );
       setMediaItems(bucketResults.flat().slice(0, 8));
     } catch (err) {
-      console.error('Dashboard load failed:', err);
+      logger.error('Dashboard load failed:', err);
     }
     setLoading(false);
   }

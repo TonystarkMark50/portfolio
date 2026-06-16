@@ -1,5 +1,6 @@
 import { loadResumeData } from '../lib/loaders';
 import { getVerifiedIcons, generatePdfBlob, downloadBlob } from '../services/resume/pdfGenerator';
+import logger from './logger';
 
 export async function generateAndDownloadResume(): Promise<void> {
   try {
@@ -11,6 +12,6 @@ export async function generateAndDownloadResume(): Promise<void> {
     const name = resumeData?.personalInfo?.name?.replace(/\s+/g, '_') || 'Resume';
     downloadBlob(blob, `${name}_Resume.pdf`);
   } catch (err) {
-    console.error('Failed to generate resume:', err);
+    logger.error('Failed to generate resume:', err);
   }
 }

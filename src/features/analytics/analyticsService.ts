@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase';
+import logger from '../../utils/logger';
 
 export interface DeviceStats {
   desktop: number;
@@ -161,7 +162,7 @@ export async function recordPageView(path: string): Promise<void> {
       referrer: typeof document !== 'undefined' ? document.referrer || 'direct' : 'direct',
     });
   } catch (err) {
-    console.error('recordPageView error:', err);
+    logger.error('recordPageView error:', err);
   }
 }
 

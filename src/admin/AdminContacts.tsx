@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Mail, Search, Inbox, Archive, ExternalLink, MessageSquare, Trash2, Filter, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { logAuditAction } from '../lib/api';
+import logger from '../utils/logger';
 import ConfirmationModal from '../components/ConfirmationModal';
 import type { ConfirmAction } from '../components/ConfirmationModal';
 
@@ -54,14 +55,14 @@ export default function AdminContacts() {
   async function updateStatus(id: string, status: string) {
     const is_read = status !== 'new';
     const { error } = await supabase.from('contact_submissions').update({ status, is_read }).eq('id', id);
-    if (error) console.error('Failed to update status:', error);
+    if (error) logger.error('Failed to update status:', error);
     logAuditAction(`contact_submission ${status}: ${id}`);
     load();
   }
 
   async function markAsRead(id: string) {
     const { error } = await supabase.from('contact_submissions').update({ is_read: true }).eq('id', id);
-    if (error) console.error('Failed to mark as read:', error);
+    if (error) logger.error('Failed to mark as read:', error);
     logAuditAction(`contact_submission read: ${id}`);
     load();
   }
@@ -86,7 +87,7 @@ export default function AdminContacts() {
       },
       onConfirm: async () => {
         const { error } = await supabase.from('contact_submissions').delete().eq('id', id);
-        if (error) console.error('Failed to delete message:', error);
+        if (error) logger.error('Failed to delete message:', error);
         logAuditAction(`contact_submission delete: ${id} (${msg?.name || 'unknown'})`);
         if (selected === id) setSelected(null);
         load();

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Upload, Image, FileText, Trash2, Copy, Check, ExternalLink, Search, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
+import logger from '../../utils/logger';
 import ConfirmationModal from '../ConfirmationModal';
 import type { ConfirmAction } from '../ConfirmationModal';
 import { validateImageFile, generateSafeFileName } from '../../utils/fileValidation';
@@ -31,7 +32,7 @@ export default function AdminMedia() {
   async function loadBucket(bucket: string) {
     setLoading(true);
     const { data, error } = await supabase.storage.from(bucket).list();
-    if (error) { console.error('Failed to list:', error); setItems([]); }
+    if (error) { logger.error('Failed to list:', error); setItems([]); }
     else {
       const mapped = (data || []).map(f => {
         const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(f.name);

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import logger from '../utils/logger';
 
 const VISITOR_ID_KEY = 'portfolio_visitor_id';
 const GEO_KEY = 'portfolio_geo_cache';
@@ -66,7 +67,7 @@ export async function trackPageView(pageName: string): Promise<void> {
       referrer,
     });
   } catch (err) {
-    console.error('trackPageView error:', err);
+    logger.error('trackPageView error:', err);
   }
 }
 
@@ -85,7 +86,7 @@ export async function trackProjectView(projectId: string, projectTitle: string):
       referrer: document.referrer || 'direct',
     });
   } catch (err) {
-    console.error('trackProjectView error:', err);
+    logger.error('trackProjectView error:', err);
   }
 }
 
@@ -104,6 +105,6 @@ export async function trackResumeDownload(): Promise<void> {
     });
     // Notification is created automatically via DB trigger
   } catch (err) {
-    console.error('trackResumeDownload error:', err);
+    logger.error('trackResumeDownload error:', err);
   }
 }

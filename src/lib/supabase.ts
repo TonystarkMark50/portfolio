@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { contactFormSchema } from '../utils/validation';
+import logger from '../utils/logger';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -43,7 +44,7 @@ export async function submitContactForm(formData: {
     if (dbError) throw dbError;
     return { success: true };
   } catch (error) {
-    console.error('Error submitting contact form:', error);
+    logger.error('Error submitting contact form:', error);
     const msg = error instanceof Error ? error.message : 'Failed to submit form';
     return { success: false, error: msg };
   }
@@ -55,7 +56,7 @@ export async function getResumeDownloadCount(): Promise<number> {
     .select('*', { count: 'exact', head: true });
 
   if (error) {
-    console.error('Error getting resume download count:', error);
+    logger.error('Error getting resume download count:', error);
     return 0;
   }
 
