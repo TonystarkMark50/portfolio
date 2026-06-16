@@ -198,17 +198,7 @@ Opens at `http://localhost:5173`. The admin panel is at `/admin`.
 
 ## Deployment
 
-### Vercel (Recommended)
-
-1. Push to GitHub
-2. Go to [vercel.com](https://vercel.com) and import your repo
-3. Vercel auto-detects Vite — no config needed
-4. Add environment variables in Vercel dashboard
-5. Deploy — done
-
-> Make sure your `main` branch is the one Vercel deploys (not `gh-pages`).
-
-### Netlify
+### Netlify (Recommended)
 
 The repo includes a `netlify.toml` with SPA redirects and security headers. To deploy:
 
