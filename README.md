@@ -198,7 +198,17 @@ Opens at `http://localhost:5173`. The admin panel is at `/admin`.
 
 ## Deployment
 
-### Netlify (Recommended)
+### Vercel (Recommended)
+
+1. Push to GitHub
+2. Go to [vercel.com](https://vercel.com) and import your repo
+3. Vercel auto-detects Vite — no config needed
+4. Add environment variables in Vercel dashboard
+5. Deploy — done
+
+> Make sure your `main` branch is the one Vercel deploys (not `gh-pages`).
+
+### Netlify
 
 The repo includes a `netlify.toml` with SPA redirects and security headers. To deploy:
 
@@ -215,10 +225,6 @@ docker run -p 8080:80 portfolio
 ```
 
 Serves the app via nginx on port 80.
-
-### GitHub Pages
-
-The repo includes a `.github/workflows/deploy.yml` workflow. Enable GitHub Pages in your repo settings (Source: GitHub Actions) and push to `main`.
 
 ---
 
