@@ -1,14 +1,14 @@
 import { useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import { Monitor, Tablet, Smartphone, Check, Clock, AlertTriangle, Loader2, Globe, ExternalLink } from 'lucide-react';
-import Hero from '../../components/sections/HeroSection';
-import About from '../../components/sections/AboutSection';
-import Skills from '../../components/sections/SkillsSection';
-import Projects from '../../components/sections/ProjectsSection';
-import Education from '../../components/sections/EducationSection';
-import Certifications from '../../components/sections/CertificationsSection';
-import Internship from '../../components/sections/InternshipSection';
-import Journey from '../../components/sections/JourneySection';
-import Contact from '../../components/sections/ContactSection';
+import Hero from '../../sections/HeroSection';
+import About from '../../sections/AboutSection';
+import Skills from '../../sections/SkillsSection';
+import Projects from '../../sections/ProjectsSection';
+import Education from '../../sections/EducationSection';
+import Certifications from '../../sections/CertificationsSection';
+import Internship from '../../sections/InternshipSection';
+import Journey from '../../sections/JourneySection';
+import Contact from '../../sections/ContactSection';
 
 type DeviceType = 'desktop' | 'tablet' | 'mobile';
 

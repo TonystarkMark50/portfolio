@@ -15,15 +15,15 @@ function SentryInit() {
   return null;
 }
 
-const Hero = lazy(() => import('./components/sections/HeroSection'));
-const About = lazy(() => import('./components/sections/AboutSection'));
-const Internship = lazy(() => import('./components/sections/InternshipSection'));
-const Projects = lazy(() => import('./components/sections/ProjectsSection'));
-const Skills = lazy(() => import('./components/sections/SkillsSection'));
-const Certifications = lazy(() => import('./components/sections/CertificationsSection'));
-const Journey = lazy(() => import('./components/sections/JourneySection'));
-const Education = lazy(() => import('./components/sections/EducationSection'));
-const Contact = lazy(() => import('./components/sections/ContactSection'));
+const Hero = lazy(() => import('./sections/HeroSection'));
+const About = lazy(() => import('./sections/AboutSection'));
+const Internship = lazy(() => import('./sections/InternshipSection'));
+const Projects = lazy(() => import('./sections/ProjectsSection'));
+const Skills = lazy(() => import('./sections/SkillsSection'));
+const Certifications = lazy(() => import('./sections/CertificationsSection'));
+const Journey = lazy(() => import('./sections/JourneySection'));
+const Education = lazy(() => import('./sections/EducationSection'));
+const Contact = lazy(() => import('./sections/ContactSection'));
 const AdminLogin = lazy(() => import('./pages/AdminLogin'));
 const AdminPanel = lazy(() => import('./pages/AdminApp'));
 
