@@ -13,7 +13,6 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "@marsidev/react-turnstile": "^1.5.3",
     "@react-pdf/renderer": "^3.4.4",
     "@sentry/integrations": "^7.114.0",
     "@sentry/react": "^10.58.0",

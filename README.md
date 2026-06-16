@@ -22,7 +22,7 @@ Fork this repo and change these things to turn it into **your** portfolio:
 | `VITE_SUPABASE_ANON_KEY` | Your Supabase anon/public key | Required — same page as above |
 | `VITE_OWNER_EMAIL` | **Your email address** | This is your admin login email — only this email can sign in |
 | `VITE_WEB3FORMS_ACCESS_KEY` | Your Web3Forms key (optional) | Powers the contact form if you use Web3Forms |
-| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile key (optional) | Adds CAPTCHA to the contact form |
+
 
 ### 2. Site Name & Branding
 | File | What to change |
@@ -155,7 +155,6 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 VITE_OWNER_EMAIL=your@email.com
 VITE_WEB3FORMS_ACCESS_KEY=your-key     # optional
-VITE_TURNSTILE_SITE_KEY=your-key       # optional
 VITE_SENTRY_DSN=your-dsn               # optional
 VITE_BASE_PATH=/                       # optional, for sub-path deploys
 ```
