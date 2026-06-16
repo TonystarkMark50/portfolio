@@ -11,6 +11,65 @@
 
 ---
 
+## 🚀 Making It Your Own — What to Edit
+
+Fork this repo and change these things to turn it into **your** portfolio:
+
+### 1. Environment Variables (`.env`)
+| Variable | What to put | Why |
+|---|---|---|
+| `VITE_SUPABASE_URL` | Your Supabase project URL | Required — get it from `https://supabase.com/dashboard/project/<your-project>/settings/api` |
+| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon/public key | Required — same page as above |
+| `VITE_OWNER_EMAIL` | **Your email address** | This is your admin login email — only this email can sign in |
+| `VITE_WEB3FORMS_ACCESS_KEY` | Your Web3Forms key (optional) | Powers the contact form if you use Web3Forms |
+| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile key (optional) | Adds CAPTCHA to the contact form |
+
+### 2. Site Name & Branding
+| File | What to change |
+|---|---|
+| `src/config/app.ts` | `SITE_NAME`, `DEFAULT_PAGE_TITLE` |
+| `public/favicon.ico` | Replace with your own favicon |
+| `public/og-image.png` | Open Graph image for social sharing |
+| `src/sections/HeroSection.tsx` | Hero layout, tagline, background styling |
+| `src/components/Navbar.tsx` | Navigation links, brand name |
+
+### 3. Portfolio Content (via Admin Panel — no coding)
+Once deployed, sign in at `/admin` with your `VITE_OWNER_EMAIL` and manage everything visually:
+- **Profile** — name, title, photo, social links
+- **About** — bio sections and paragraphs
+- **Skills** — categories and skill tags
+- **Internships** — role, organization, duration, descriptions
+- **Projects** — name, description, tech stack, links, featured flag
+- **Education** — degree, institution, GPA, dates
+- **Certifications** — title, organization, logo, credential link
+- **Journey** — timeline entries
+- **Resume** — full resume builder with ATS scoring and PDF export
+
+> Everything in the admin panel auto-saves — just click and type.
+
+### 4. Color Theme
+Edit `tailwind.config.js` to change the color palette. The app uses a custom theme with `primary`, `accent`, `dark`, `gray`, and `error` color scales.
+
+### 5. Layout & Sections (Optional)
+Want to reorder sections on your homepage? Edit `src/App.tsx` — each section is lazy-loaded and wrapped in `<Section>`:
+
+```tsx
+// src/App.tsx — sections render in this order
+<HeroSection />
+<AboutSection />
+<SkillsSection />
+<InternshipSection />
+<ProjectsSection />
+<EducationSection />
+<CertificationsSection />
+<JourneySection />
+<ContactSection />
+```
+
+Remove any section you don't need, or add custom ones.
+
+---
+
 ## Features
 
 ### Portfolio Site (Public)
@@ -76,13 +135,13 @@
 ### Prerequisites
 
 - Node.js 20+
-- A Supabase project (free tier works)
-- A Supabase service role key (for running migrations)
+- A Supabase project (free tier works) — create one at [supabase.com](https://supabase.com)
 
-### Installation
+### Fork & Clone
 
 ```bash
-git clone <your-repo-url> portfolio
+# Fork the repo on GitHub, then:
+git clone https://github.com/<your-username>/portfolio.git
 cd portfolio
 npm install
 ```
