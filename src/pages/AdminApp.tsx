@@ -10,7 +10,7 @@ const TAB_STORAGE_KEY = 'admin-active-tab';
 const VALID_TABS = [
   'dashboard','profile','about','skills','projects','internship','education',
   'certifications','journey','contact','resume','media','settings','analytics',
-  'notifications','crm','seo','ai','github','backup'
+  'notifications','crm'
 ];
 
 const LazyDashboard = lazy(() => import('../admin/AdminDashboard'));
@@ -29,10 +29,6 @@ const LazyAnalytics = lazy(() => import('../admin/AnalyticsCenter'));
 const LazyNotifications = lazy(() => import('../features/notifications/NotificationCenter'));
 const LazyCRM = lazy(() => import('../features/contact-crm/ContactInbox'));
 const LazyMedia = lazy(() => import('../features/media-library/MediaLibrary'));
-const LazySEO = lazy(() => import('../features/seo-manager/SEOManager'));
-const LazyAI = lazy(() => import('../features/ai-assistant/AIAssistant'));
-const LazyGitHub = lazy(() => import('../features/github/GitHubIntegration'));
-const LazyBackup = lazy(() => import('../features/backup/BackupManager'));
 
 function TabFallback() {
   return (
@@ -105,10 +101,6 @@ function AdminContent() {
       case 'analytics': return <LazyAnalytics />;
       case 'notifications': return <LazyNotifications open onClose={() => setActiveTab('dashboard')} />;
       case 'crm': return <LazyCRM onNavigate={(t) => setActiveTab(t as AdminTab)} />;
-      case 'seo': return <LazySEO onNavigate={(t) => setActiveTab(t as AdminTab)} />;
-      case 'ai': return <LazyAI onNavigate={(t) => setActiveTab(t as AdminTab)} />;
-      case 'github': return <LazyGitHub onNavigate={(t) => setActiveTab(t as AdminTab)} />;
-      case 'backup': return <LazyBackup onNavigate={(t) => setActiveTab(t as AdminTab)} />;
       case 'settings': return <LazySettings />;
       default: return <LazyDashboard onNavigate={setActiveTab} />;
     }

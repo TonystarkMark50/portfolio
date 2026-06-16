@@ -79,9 +79,6 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [device, setDevice] = useState<DeviceType>('desktop');
   const [loading, setLoading] = useState(true);
-  const [seoTitle, setSeoTitle] = useState('');
-  const [seoDesc, setSeoDesc] = useState('');
-  const [saving, setSaving] = useState(false);
   const [mediaItems, setMediaItems] = useState<{ name: string; url: string }[]>([]);
 
   useEffect(() => { loadAll(); }, []);
@@ -90,12 +87,11 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
     try {
       const [
         pRes, projRes, certRes, eduRes, skillRes, internRes,
-        auditRes, msgRes, settingsRes,
+        auditRes, msgRes,
       ] = await Promise.all([
         getProfile(), getProjects(), getCertifications(), getEducation(), getSkills(), getInternships(),
         supabase.from('admin_audit_log').select('*').order('created_at', { ascending: false }).limit(10),
         supabase.from('contact_submissions').select('*', { count: 'exact', head: true }).eq('is_read', false),
-        supabase.from('site_settings').select('*').limit(1).maybeSingle(),
       ]);
       setProfile(pRes.data);
       setProjects(projRes.data || []);
@@ -105,11 +101,6 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
       setInternships(internRes.data || []);
       if (auditRes.data) setActivities(auditRes.data);
       setUnreadMessages(msgRes.count || 0);
-      if (settingsRes.data) {
-        const s = settingsRes.data;
-        setSeoTitle(s.site_title || '');
-        setSeoDesc(s.seo_description || '');
-      }
 
       const { data: msgs } = await supabase.from('contact_submissions').select('id, name, subject, is_read, created_at').order('created_at', { ascending: false }).limit(5);
       if (msgs) setMessages(msgs);
@@ -153,17 +144,6 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
     { label: 'Journey', tab: 'journey', icon: Map },
     { label: 'Contact', tab: 'contact', icon: Mail },
   ];
-
-  async function handleSaveSEO() {
-    setSaving(true);
-    const { data: existing } = await supabase.from('site_settings').select('id').limit(1).maybeSingle();
-    if (existing?.id) {
-      await supabase.from('site_settings').update({ site_title: seoTitle, seo_description: seoDesc }).eq('id', existing.id);
-    } else {
-      await supabase.from('site_settings').insert({ site_title: seoTitle, seo_description: seoDesc });
-    }
-    setSaving(false);
-  }
 
   const siteUrl = window.location.origin;
   const currentDevice = deviceConfig[device];
@@ -508,19 +488,6 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
                 </button>
               ))}
             </div>
-            <div className="pt-2 border-t border-gray-800">
-              <p className="text-[10px] text-gray-600 mb-2">SEO Settings</p>
-              <div className="space-y-2">
-                <input value={seoTitle} onChange={e => setSeoTitle(e.target.value)} placeholder="Site Title" className="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors" />
-                <textarea value={seoDesc} onChange={e => setSeoDesc(e.target.value)} placeholder="Meta Description" rows={2} className="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors resize-none" />
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-gray-600">{seoDesc.length} / 160</span>
-                  <button onClick={handleSaveSEO} disabled={saving} className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors disabled:opacity-50">
-                    {saving ? 'Saving...' : 'Save SEO'}
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Right: Live Preview */}
@@ -752,19 +719,6 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
               <Linkedin className="w-4 h-4 text-gray-400" />
               <span className="text-xs text-gray-300 flex-1 truncate">{profile?.linkedin || 'Not set'}</span>
               <button onClick={() => onNavigate?.('profile')} className="text-[10px] text-blue-400">Edit</button>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">SEO</p>
-            <div className="space-y-2">
-              <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700">
-                <p className="text-[10px] text-gray-500">Site Title</p>
-                <p className="text-xs text-gray-300 truncate">{seoTitle || 'Not set'}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700">
-                <p className="text-[10px] text-gray-500">Meta Description</p>
-                <p className="text-xs text-gray-300 truncate">{seoDesc || 'Not set'}</p>
-              </div>
             </div>
           </div>
           <div className="space-y-3">

@@ -5,7 +5,6 @@ import {
   Map, Mail, Settings, LogOut, FileText, Image, Search,
   ChevronLeft, ChevronRight, Bell, BarChart3, ExternalLink,
   Clock, Zap, CheckCheck, Trash2, X, MessageSquare, Download, FolderPlus, AwardIcon,
-  Globe, Sparkles, Github, RotateCcw
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import {
@@ -24,7 +23,7 @@ export type AdminTab =
   | 'dashboard' | 'profile' | 'about' | 'skills' | 'projects'
   | 'internship' | 'education' | 'certifications' | 'journey'
   | 'contact' | 'resume' | 'media' | 'settings' | 'analytics'
-  | 'notifications' | 'crm' | 'seo' | 'ai' | 'github' | 'backup';
+  | 'notifications' | 'crm';
 
 const navItems: { id: AdminTab; icon: typeof LayoutDashboard; label: string }[] = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -40,10 +39,6 @@ const navItems: { id: AdminTab; icon: typeof LayoutDashboard; label: string }[] 
   { id: 'resume', icon: FileText, label: 'Resume Studio' },
   { id: 'media', icon: Image, label: 'Media Library' },
   { id: 'analytics', icon: BarChart3, label: 'Analytics' },
-  { id: 'seo', icon: Globe, label: 'SEO Manager' },
-  { id: 'ai', icon: Sparkles, label: 'AI Assistant' },
-  { id: 'github', icon: Github, label: 'GitHub' },
-  { id: 'backup', icon: RotateCcw, label: 'Backup' },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 

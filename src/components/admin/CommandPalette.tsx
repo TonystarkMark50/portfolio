@@ -13,7 +13,7 @@ const tabs = [
   { id: 'contact', label: 'Contact', keywords: ['messages', 'inbox', 'mail'] },
   { id: 'resume', label: 'Resume', keywords: ['cv', 'download', 'ats'] },
   { id: 'media', label: 'Media Library', keywords: ['images', 'files', 'uploads', 'assets'] },
-  { id: 'settings', label: 'Settings', keywords: ['config', 'seo', 'theme', 'preferences'] },
+  { id: 'settings', label: 'Settings', keywords: ['config', 'theme', 'preferences'] },
 ];
 
 interface CommandPaletteProps {
