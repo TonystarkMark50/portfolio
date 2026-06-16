@@ -12,7 +12,9 @@ const initSentry = async () => {
     tracesSampleRate: import.meta.env.DEV ? 1.0 : 0.1,
     environment: import.meta.env.VITE_NODE_ENV,
     beforeSend(event) {
-      logger.info('Sentry event sent:', event)
+      if (event.request?.cookies) {
+        delete event.request.cookies;
+      }
       return event
     },
   })

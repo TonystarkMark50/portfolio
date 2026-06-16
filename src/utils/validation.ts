@@ -2,12 +2,13 @@ import { z } from 'zod'
 
 export const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 })
 
 export const contactFormSchema = z.object({
   name: z.string().min(1, 'Name is required').max(200, 'Name is too long'),
   email: z.string().email('Invalid email address'),
+  subject: z.string().max(200, 'Subject is too long').optional().default(''),
   message: z.string().min(1, 'Message is required').max(5000, 'Message is too long'),
 })
 

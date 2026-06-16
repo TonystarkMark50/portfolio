@@ -15,12 +15,12 @@ import {
 
 describe('loginSchema', () => {
   it('accepts valid login', () => {
-    const result = loginSchema.safeParse({ email: 'a@b.com', password: '123456' })
+    const result = loginSchema.safeParse({ email: 'a@b.com', password: '12345678' })
     expect(result.success).toBe(true)
   })
 
   it('rejects invalid email', () => {
-    const result = loginSchema.safeParse({ email: 'not-an-email', password: '123456' })
+    const result = loginSchema.safeParse({ email: 'not-an-email', password: '12345678' })
     expect(result.success).toBe(false)
   })
 
@@ -32,7 +32,7 @@ describe('loginSchema', () => {
   it('rejects missing fields', () => {
     expect(loginSchema.safeParse({}).success).toBe(false)
     expect(loginSchema.safeParse({ email: 'a@b.com' }).success).toBe(false)
-    expect(loginSchema.safeParse({ password: '123456' }).success).toBe(false)
+    expect(loginSchema.safeParse({ password: '12345678' }).success).toBe(false)
   })
 })
 

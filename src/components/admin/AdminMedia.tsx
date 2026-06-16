@@ -5,7 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import logger from '../../utils/logger';
 import ConfirmationModal from '../ConfirmationModal';
 import type { ConfirmAction } from '../ConfirmationModal';
-import { validateImageFile, generateSafeFileName } from '../../utils/fileValidation';
+import { validateImageFile, validateDocumentFile, generateSafeFileName } from '../../utils/fileValidation';
 
 interface MediaItem {
   name: string;
@@ -45,7 +45,8 @@ export default function AdminMedia() {
 
   async function handleUpload(file: File) {
     setUploading(true);
-    const validation = validateImageFile(file);
+    const isDocumentBucket = activeBucket === 'resume-assets';
+    const validation = isDocumentBucket ? validateDocumentFile(file) : validateImageFile(file);
     if (!validation.valid) { addToast('error', validation.error!); setUploading(false); return; }
     const fileName = generateSafeFileName(file.name);
     const { error } = await supabase.storage.from(activeBucket).upload(fileName, file, { cacheControl: '3600', upsert: false });

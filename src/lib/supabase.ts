@@ -45,8 +45,7 @@ export async function submitContactForm(formData: {
     return { success: true };
   } catch (error) {
     logger.error('Error submitting contact form:', error);
-    const msg = error instanceof Error ? error.message : 'Failed to submit form';
-    return { success: false, error: msg };
+    return { success: false, error: 'Failed to submit form. Please try again later.' };
   }
 }
 
