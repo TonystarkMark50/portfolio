@@ -57,7 +57,7 @@ export default function SEOManager(_props: Props) {
     og_image_alt: 'Jagadeesh T - Biomedical Engineering Portfolio',
     twitter_handle: '',
     author: 'Jagadeesh T',
-    canonical_url: 'https://your-domain.netlify.app',
+    canonical_url: 'https://portfolio-jagadeesh-t.netlify.app/',
     keywords: 'Biomedical Engineering, Healthcare Technology, Medical Devices, IoT Healthcare, Biomedical Student, Medical Technology, Engineering Portfolio, Healthcare Innovation, Biomedical Projects, Internet of Things, Clinical Engineering, Medical Equipment, Biomedical Intern, Healthcare Systems, Engineering Student, Portfolio Website',
     robots: 'index, follow',
     theme_color: '#2563EB',
@@ -91,7 +91,7 @@ export default function SEOManager(_props: Props) {
           og_image_alt: data.og_image_alt ?? 'Jagadeesh T - Biomedical Engineering Portfolio',
           twitter_handle: data.twitter_handle ?? '',
           author: data.author ?? 'Jagadeesh T',
-          canonical_url: data.canonical_url ?? 'https://your-domain.netlify.app',
+          canonical_url: data.canonical_url ?? 'https://portfolio-jagadeesh-t.netlify.app/',
           keywords: data.keywords ?? 'Biomedical Engineering, Healthcare Technology, Medical Devices, IoT Healthcare, Biomedical Student, Medical Technology, Engineering Portfolio, Healthcare Innovation, Biomedical Projects, Internet of Things, Clinical Engineering, Medical Equipment, Biomedical Intern, Healthcare Systems, Engineering Student, Portfolio Website',
           robots: data.robots ?? 'index, follow',
           theme_color: data.theme_color ?? '#2563EB',
@@ -139,20 +139,42 @@ export default function SEOManager(_props: Props) {
         }
       }
 
+      const baseFields = {
+        site_title: data.site_title,
+        seo_description: data.meta_description,
+        seo_keywords: data.keywords,
+        updated_at: new Date().toISOString(),
+      };
+
       if (rowIdRef.current) {
         const { error } = await supabase
           .from('site_settings')
-          .update({ ...data, updated_at: new Date().toISOString() })
+          .update({ ...data, seo_description: data.meta_description, seo_keywords: data.keywords, updated_at: new Date().toISOString() })
           .eq('id', rowIdRef.current);
-        if (error) throw error;
+        if (error) {
+          const { error: retryErr } = await supabase
+            .from('site_settings')
+            .update(baseFields)
+            .eq('id', rowIdRef.current);
+          if (retryErr) throw retryErr;
+        }
       } else {
         const { data: inserted, error } = await supabase
           .from('site_settings')
-          .insert({ ...data, updated_at: new Date().toISOString() })
+          .insert({ ...data, seo_description: data.meta_description, seo_keywords: data.keywords, updated_at: new Date().toISOString() })
           .select('id')
           .single();
-        if (error) throw error;
-        if (inserted?.id) rowIdRef.current = inserted.id;
+        if (error) {
+          const { data: fallback, error: retryErr } = await supabase
+            .from('site_settings')
+            .insert(baseFields)
+            .select('id')
+            .single();
+          if (retryErr) throw retryErr;
+          if (fallback?.id) rowIdRef.current = fallback.id;
+        } else {
+          if (inserted?.id) rowIdRef.current = inserted.id;
+        }
       }
       setSaveState({ status: 'saved', message: 'Auto-saved' });
       setTimeout(() => {
