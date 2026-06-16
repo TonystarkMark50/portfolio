@@ -21,7 +21,7 @@ Fork this repo and change these things to turn it into **your** portfolio:
 | `VITE_SUPABASE_URL` | Your Supabase project URL | Required — get it from `https://supabase.com/dashboard/project/<your-project>/settings/api` |
 | `VITE_SUPABASE_ANON_KEY` | Your Supabase anon/public key | Required — same page as above |
 | `VITE_OWNER_EMAIL` | **Your email address** | This is your admin login email — only this email can sign in |
-| `VITE_WEB3FORMS_ACCESS_KEY` | Your Web3Forms key (optional) | Powers the contact form if you use Web3Forms |
+| `VITE_WEB3FORMS_ACCESS_KEY` | Your Web3Forms key | **Required** — contact form sends data to Supabase AND emails you via Web3Forms. Without this, you won't receive email notifications when someone messages you. Get a free key at [web3forms.com](https://web3forms.com) |
 
 
 ### 2. Site Name & Branding
@@ -154,7 +154,7 @@ Create a `.env` file in the project root:
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 VITE_OWNER_EMAIL=your@email.com
-VITE_WEB3FORMS_ACCESS_KEY=your-key     # optional
+VITE_WEB3FORMS_ACCESS_KEY=your-key     # required — get at https://web3forms.com
 VITE_SENTRY_DSN=your-dsn               # optional
 VITE_BASE_PATH=/                       # optional, for sub-path deploys
 ```
