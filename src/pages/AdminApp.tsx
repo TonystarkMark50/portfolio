@@ -4,28 +4,40 @@ import { ToastProvider } from '../context/ToastContext';
 import AdminLayout from '../components/admin/AdminLayout';
 import type { AdminTab } from '../components/admin/AdminLayout';
 import ErrorBoundary from '../components/ErrorBoundary';
-import AdminDashboard from '../features/dashboard/AdminDashboard';
-import AdminProfile from '../features/profile/AdminProfile';
-import AdminAbout from '../features/about/AdminAbout';
-import AdminSkills from '../features/skills/AdminSkills';
-import AdminEducation from '../features/education/AdminEducation';
-import AdminInternship from '../features/internships/AdminInternship';
-import AdminCertifications from '../features/certifications/AdminCertifications';
-import AdminProjects from '../features/projects/AdminProjects';
-import AdminJourney from '../features/journey/AdminJourney';
-import AdminContacts from '../features/contact/AdminContacts';
-import AdminResume from '../features/resume/AdminResume';
-import AdminMedia from '../components/admin/AdminMedia';
-import AdminSettings from '../features/settings/AdminSettings';
-import AnalyticsCenter from '../features/analytics/AnalyticsCenter';
+import AdminDashboard from '../admin/AdminDashboard';
+import AdminProfile from '../admin/AdminProfile';
+import AdminAbout from '../admin/AdminAbout';
+import AdminSkills from '../admin/AdminSkills';
+import AdminEducation from '../admin/AdminEducation';
+import AdminInternship from '../admin/AdminInternship';
+import AdminCertifications from '../admin/AdminCertifications';
+import AdminProjects from '../admin/AdminProjects';
+import AdminJourney from '../admin/AdminJourney';
+import AdminContacts from '../admin/AdminContacts';
+import AdminResume from '../admin/AdminResume';
+import AdminSettings from '../admin/AdminSettings';
+import AnalyticsCenter from '../admin/AnalyticsCenter';
+import NotificationCenter from '../features/notifications/NotificationCenter';
+import ContactInbox from '../features/contact-crm/ContactInbox';
+import MediaLibrary from '../features/media-library/MediaLibrary';
+import SEOManager from '../features/seo-manager/SEOManager';
+import AIAssistant from '../features/ai-assistant/AIAssistant';
+import GitHubIntegration from '../features/github/GitHubIntegration';
+import BackupManager from '../features/backup/BackupManager';
 
 const TAB_STORAGE_KEY = 'admin-active-tab';
+
+const VALID_TABS = [
+  'dashboard','profile','about','skills','projects','internship','education',
+  'certifications','journey','contact','resume','media','settings','analytics',
+  'notifications','crm','seo','ai','github','backup'
+];
 
 function AdminContent() {
   const { isAuthenticated, isLoading } = useAdmin();
   const [activeTab, setActiveTab] = useState<AdminTab>(() => {
     const saved = localStorage.getItem(TAB_STORAGE_KEY);
-    if (saved && ['dashboard','profile','about','skills','projects','internship','education','certifications','journey','contact','resume','media','settings','analytics'].includes(saved)) {
+    if (saved && VALID_TABS.includes(saved)) {
       return saved as AdminTab;
     }
     return 'dashboard';
@@ -48,8 +60,14 @@ function AdminContent() {
     { tab: 'journey', component: <AdminJourney /> },
     { tab: 'contact', component: <AdminContacts /> },
     { tab: 'resume', component: <AdminResume /> },
-    { tab: 'media', component: <AdminMedia /> },
+    { tab: 'media', component: <MediaLibrary onNavigate={(t) => setActiveTab(t as AdminTab)} /> },
     { tab: 'analytics', component: <AnalyticsCenter /> },
+    { tab: 'notifications', component: <NotificationCenter open onClose={() => setActiveTab('dashboard')} /> },
+    { tab: 'crm', component: <ContactInbox onNavigate={(t) => setActiveTab(t as AdminTab)} /> },
+    { tab: 'seo', component: <SEOManager onNavigate={(t) => setActiveTab(t as AdminTab)} /> },
+    { tab: 'ai', component: <AIAssistant onNavigate={(t) => setActiveTab(t as AdminTab)} /> },
+    { tab: 'github', component: <GitHubIntegration onNavigate={(t) => setActiveTab(t as AdminTab)} /> },
+    { tab: 'backup', component: <BackupManager onNavigate={(t) => setActiveTab(t as AdminTab)} /> },
     { tab: 'settings', component: <AdminSettings /> },
   ], []);
 

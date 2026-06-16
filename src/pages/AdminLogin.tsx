@@ -3,6 +3,7 @@ import { Mail, Lock, LogIn, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 import { useNavigate } from 'react-router-dom';
 import { logAuditAction } from '../lib/api';
+import { loginSchema } from '../utils/validation';
 
 export default function AdminLogin() {
   const { login, isAuthenticated } = useAdmin();
@@ -22,6 +23,13 @@ export default function AdminLogin() {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    const parsed = loginSchema.safeParse({ email, password });
+    if (!parsed.success) {
+      setError(parsed.error.errors[0].message);
+      setLoading(false);
+      return;
+    }
 
     const result = await login(email, password);
     if (!result.success) {

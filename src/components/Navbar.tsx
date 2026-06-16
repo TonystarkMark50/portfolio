@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Menu, X, Github, Linkedin, Mail, Download } from 'lucide-react';
 import { useActiveSection } from '../hooks/useScroll';
 import { useSupabaseData } from '../hooks/usePortfolioData';

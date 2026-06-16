@@ -1,4 +1,5 @@
-import { useEffect, Suspense, lazy } from 'react';
+import { useEffect, Suspense, lazy } from 'react'
+import { initSentry } from './utils/sentry'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AdminProvider, useAdmin } from './context/AdminContext';
@@ -7,15 +8,22 @@ import { BackToTop, Footer } from './components/ScrollComponents';
 import ErrorBoundary from './components/ErrorBoundary';
 import { trackPageView } from './lib/analytics';
 
-const Hero = lazy(() => import('./features/profile/HeroSection'));
-const About = lazy(() => import('./features/about/AboutSection'));
-const Internship = lazy(() => import('./features/internships/InternshipSection'));
-const Projects = lazy(() => import('./features/projects/ProjectsSection'));
-const Skills = lazy(() => import('./features/skills/SkillsSection'));
-const Certifications = lazy(() => import('./features/certifications/CertificationsSection'));
-const Journey = lazy(() => import('./features/journey/JourneySection'));
-const Education = lazy(() => import('./features/education/EducationSection'));
-const Contact = lazy(() => import('./features/contact/ContactSection'));
+function SentryInit() {
+  useEffect(() => {
+    initSentry();
+  }, []);
+  return null;
+}
+
+const Hero = lazy(() => import('./components/sections/HeroSection'));
+const About = lazy(() => import('./components/sections/AboutSection'));
+const Internship = lazy(() => import('./components/sections/InternshipSection'));
+const Projects = lazy(() => import('./components/sections/ProjectsSection'));
+const Skills = lazy(() => import('./components/sections/SkillsSection'));
+const Certifications = lazy(() => import('./components/sections/CertificationsSection'));
+const Journey = lazy(() => import('./components/sections/JourneySection'));
+const Education = lazy(() => import('./components/sections/EducationSection'));
+const Contact = lazy(() => import('./components/sections/ContactSection'));
 const AdminLogin = lazy(() => import('./pages/AdminLogin'));
 const AdminPanel = lazy(() => import('./pages/AdminApp'));
 
@@ -123,6 +131,7 @@ function ScrollToTop() {
 function AppContent() {
   return (
     <>
+      <SentryInit />
       <ScrollToTop />
       <Routes>
       <Route path="/admin/login" element={<Suspense fallback={<SectionFallback />}><AdminLogin /></Suspense>} />

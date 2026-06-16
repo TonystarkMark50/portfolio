@@ -1,4 +1,4 @@
-import type { EducationItem, InternshipData, ProjectItem, SkillCategory, CertificationItem, ResumeData } from '../../lib/loaders';
+import type { EducationItem, InternshipData, ProjectItem, SkillCategory, CertificationItem } from '../../lib/loaders';
 import type { ResumeTemplate } from '../../components/ATSResume';
 import { supabase } from '../../lib/supabase';
 import { getAbout } from '../../lib/api';

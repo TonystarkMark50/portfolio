@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { contactFormSchema } from '../utils/validation';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -16,6 +17,11 @@ export async function submitContactForm(formData: {
   subject: string;
   message: string;
 }): Promise<{ success: boolean; error?: string }> {
+  const parsed = contactFormSchema.safeParse(formData);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.errors[0].message };
+  }
+
   try {
     let sender_ip = '';
     try {

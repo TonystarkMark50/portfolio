@@ -4,25 +4,27 @@ import {
   LayoutDashboard, User, BookOpen, Code2, Briefcase, GraduationCap, Award,
   Map, Mail, Settings, LogOut, FileText, Image, Search,
   ChevronLeft, ChevronRight, Bell, BarChart3, ExternalLink,
-  Clock, Zap, CheckCheck, Trash2, X, MessageSquare, Download, FolderPlus, AwardIcon
+  Clock, Zap, CheckCheck, Trash2, X, MessageSquare, Download, FolderPlus, AwardIcon,
+  Globe, Sparkles, Github, RotateCcw
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import {
   getNotifications, getUnreadNotificationCount,
-  markNotificationRead, markAllNotificationsRead,
+  markAllNotificationsRead,
   deleteNotificationById, deleteAllNotifications,
   type Notification,
 } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 import CommandPalette from './CommandPalette';
 import ConfirmationModal from '../ConfirmationModal';
-import NotificationDetailPanel from '../../features/notifications/NotificationDetailPanel';
+import NotificationDetailPanel from '../../admin/NotificationDetailPanel';
 import type { ConfirmAction } from '../ConfirmationModal';
 
 export type AdminTab =
   | 'dashboard' | 'profile' | 'about' | 'skills' | 'projects'
   | 'internship' | 'education' | 'certifications' | 'journey'
-  | 'contact' | 'resume' | 'media' | 'settings' | 'analytics';
+  | 'contact' | 'resume' | 'media' | 'settings' | 'analytics'
+  | 'notifications' | 'crm' | 'seo' | 'ai' | 'github' | 'backup';
 
 const navItems: { id: AdminTab; icon: typeof LayoutDashboard; label: string }[] = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -34,10 +36,14 @@ const navItems: { id: AdminTab; icon: typeof LayoutDashboard; label: string }[] 
   { id: 'education', icon: GraduationCap, label: 'Education' },
   { id: 'certifications', icon: Award, label: 'Certifications' },
   { id: 'journey', icon: Map, label: 'Journey' },
-  { id: 'contact', icon: Mail, label: 'Contact' },
+  { id: 'contact', icon: Mail, label: 'Contact CRM' },
   { id: 'resume', icon: FileText, label: 'Resume Studio' },
   { id: 'media', icon: Image, label: 'Media Library' },
   { id: 'analytics', icon: BarChart3, label: 'Analytics' },
+  { id: 'seo', icon: Globe, label: 'SEO Manager' },
+  { id: 'ai', icon: Sparkles, label: 'AI Assistant' },
+  { id: 'github', icon: Github, label: 'GitHub' },
+  { id: 'backup', icon: RotateCcw, label: 'Backup' },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -294,7 +300,7 @@ export default function AdminLayout({
         onClose={handleCloseDetailPanel}
         onMarkRead={handleDetailMarkRead}
       />
-      <CommandPalette onNavigate={onTabChange} open={cmdOpen} onClose={() => setCmdOpen(false)} />
+      <CommandPalette onNavigate={(tab) => onTabChange(tab as AdminTab)} open={cmdOpen} onClose={() => setCmdOpen(false)} />
 
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-2xl text-sm font-medium transition-all ${
