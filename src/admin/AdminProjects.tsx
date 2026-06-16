@@ -29,13 +29,13 @@ export default function AdminProjects() {
 
   const { status, triggerSave } = useAutoSave(save);
 
-  async function updateField(id: string, key: keyof Project, val: any) {
+  async function updateField(id: string, key: keyof Project, val: string | number | boolean | string[]) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
     triggerSave();
   }
 
   async function addProject() {
-    await upsertProject({ name: 'New Project', description: '', type: 'Academic', status: 'Completed', technologies: [], featured: false, display_order: items.length } as any);
+    await upsertProject({ name: 'New Project', description: '', type: 'Academic', status: 'Completed', technologies: [], featured: false, display_order: items.length } as Partial<Project>);
     load();
   }
 

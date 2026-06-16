@@ -43,6 +43,7 @@ export default function NotificationDetailPanel({ notification, open, onClose, o
       markNotificationRead(notification.id);
       onMarkRead?.(notification.id);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notification?.id]);
 
   if (!open || !notification) return null;

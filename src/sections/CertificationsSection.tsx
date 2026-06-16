@@ -1,7 +1,7 @@
 import { Award, Calendar, ExternalLink, ShieldCheck, Trophy, Code2, BookOpen } from 'lucide-react';
 import { useIntersectionObserver } from '../hooks/useScroll';
 import { useSupabaseData } from '../hooks/usePortfolioData';
-import { loadCertifications } from '../lib/loaders';
+import { loadCertifications, type CertificationItem } from '../lib/loaders';
 import collegeLogo from '../assets/images/college.png';
 import hackerrankLogo from '../assets/images/hackerrank.png';
 
@@ -31,7 +31,7 @@ const platformConfig: Record<string, { colors: string; border: string; text: str
   },
 };
 
-function CertificationCard({ cert, index, isVisible }: { cert: any; index: number; isVisible: boolean }) {
+function CertificationCard({ cert, index, isVisible }: { cert: CertificationItem; index: number; isVisible: boolean }) {
   const config = platformConfig[cert.platform] || platformConfig.HackerRank;
 
   return (
@@ -165,7 +165,7 @@ export default function Certifications() {
   const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1 });
   const { data: certificationsData } = useSupabaseData(loadCertifications);
   const hasRealCertifications = certificationsData
-    ? certificationsData.some((c: any) => c.title !== 'Certification Title' || c.organization !== 'Issuing Organization')
+    ? certificationsData.some((c: CertificationItem) => c.title !== 'Certification Title' || c.organization !== 'Issuing Organization')
     : false;
 
   return (
@@ -194,7 +194,7 @@ export default function Certifications() {
 
           <div className="max-w-4xl mx-auto space-y-8">
             {hasRealCertifications ? (
-              certificationsData!.map((cert: any, index: number) => (
+              certificationsData!.map((cert: CertificationItem, index: number) => (
                 <CertificationCard key={cert.id} cert={cert} index={index} isVisible={isVisible} />
               ))
             ) : (

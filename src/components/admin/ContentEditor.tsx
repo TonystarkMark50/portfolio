@@ -98,6 +98,7 @@ export function AutoSaveBar({ status, onSave }: { status: SaveStatus; onSave?: (
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAutoSave(saveFn: () => Promise<void>) {
   const [status, setStatus] = useState<SaveStatus>('idle');
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
@@ -300,12 +301,14 @@ export function InlineField({
   }
 
   if (editing) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const refAny = inputRef as any;
     return (
       <div className={className}>
         {type === 'textarea' ? (
-          <textarea ref={inputRef as any} value={draft} onChange={e => setDraft(e.target.value)} onBlur={handleSave} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleSave(); if (e.key === 'Escape') { setDraft(value); setEditing(false); } }} className="w-full px-2 py-1 rounded-lg bg-gray-800 border border-blue-500 text-white text-sm outline-none resize-none" rows={3} autoFocus />
+          <textarea ref={refAny} value={draft} onChange={e => setDraft(e.target.value)} onBlur={handleSave} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleSave(); if (e.key === 'Escape') { setDraft(value); setEditing(false); } }} className="w-full px-2 py-1 rounded-lg bg-gray-800 border border-blue-500 text-white text-sm outline-none resize-none" rows={3} autoFocus />
         ) : (
-          <input ref={inputRef as any} type={type} value={draft} onChange={e => setDraft(e.target.value)} onBlur={handleSave} onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') { setDraft(value); setEditing(false); } }} className="w-full px-2 py-1 rounded-lg bg-gray-800 border border-blue-500 text-white text-sm outline-none" autoFocus />
+          <input ref={refAny} type={type} value={draft} onChange={e => setDraft(e.target.value)} onBlur={handleSave} onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') { setDraft(value); setEditing(false); } }} className="w-full px-2 py-1 rounded-lg bg-gray-800 border border-blue-500 text-white text-sm outline-none" autoFocus />
         )}
       </div>
     );

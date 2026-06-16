@@ -163,10 +163,12 @@ export default function ContactInbox(_props: Props) {
 
   useEffect(() => {
     loadMessages();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFolder, debouncedSearch, page]);
 
   useEffect(() => {
     loadUnreadCount();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
   useEffect(() => {
@@ -175,6 +177,7 @@ export default function ContactInbox(_props: Props) {
       return;
     }
     loadDetail(selectedId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
   const loadMessages = useCallback(async () => {

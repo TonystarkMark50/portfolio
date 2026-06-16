@@ -1,7 +1,7 @@
 import { GraduationCap, BookOpen, Award, Calendar, MapPin } from 'lucide-react';
 import { useIntersectionObserver } from '../hooks/useScroll';
 import { useSupabaseData } from '../hooks/usePortfolioData';
-import { loadEducation } from '../lib/loaders';
+import { loadEducation, type EducationItem } from '../lib/loaders';
 
 const getIcon = (id: number) => {
   switch (id) {
@@ -41,7 +41,7 @@ export default function Education() {
           </div>
 
           <div className="space-y-6">
-            {educationData.map((edu: any, index: number) => {
+            {educationData.map((edu: EducationItem, index: number) => {
               const Icon = getIcon(edu.id);
               return (
                 <div

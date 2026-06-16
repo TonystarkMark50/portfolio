@@ -35,13 +35,13 @@ export default function AdminCertifications() {
 
   const { status, triggerSave } = useAutoSave(save);
 
-  async function updateField(id: string, key: keyof Certification, val: any) {
+  async function updateField(id: string, key: keyof Certification, val: string | number | boolean | string[]) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
     triggerSave();
   }
 
   async function addCert() {
-    await upsertCertification({ title: 'New Certification', organization: 'Organization', display_order: items.length } as any);
+    await upsertCertification({ title: 'New Certification', organization: 'Organization', display_order: items.length } as Partial<Certification>);
     load();
   }
 

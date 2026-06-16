@@ -262,6 +262,7 @@ export default function ResumeStudioPro({ onNavigate }: ResumeStudioProProps) {
     }
   }, [sections]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const atsScore = useMemo(() => calculateResumeScore(), [template, sections, versions]);
 
   const handleTemplateChange = (t: ResumeTemplate) => {

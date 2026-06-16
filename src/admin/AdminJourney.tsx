@@ -37,13 +37,13 @@ export default function AdminJourney() {
 
   const { status, triggerSave } = useAutoSave(save);
 
-  async function updateField(id: string, key: keyof Journey, val: any) {
+  async function updateField(id: string, key: keyof Journey, val: string | number | boolean | string[]) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
     triggerSave();
   }
 
   async function addEntry() {
-    await upsertJourneyEntry({ title: 'New Milestone', type: 'milestone', icon: 'Star', display_order: items.length } as any);
+    await upsertJourneyEntry({ title: 'New Milestone', type: 'milestone', icon: 'Star', display_order: items.length } as Partial<Journey>);
     load();
   }
 

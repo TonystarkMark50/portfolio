@@ -27,13 +27,13 @@ export default function AdminSkills() {
 
   const { status, triggerSave } = useAutoSave(save);
 
-  async function updateField(id: string, key: keyof Skill, val: any) {
+  async function updateField(id: string, key: keyof Skill, val: string | number | boolean | string[]) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
     triggerSave();
   }
 
   async function addCategory() {
-    await upsertSkill({ category: categories[0], skills: [], gradient: gradients[0], display_order: items.length } as any);
+    await upsertSkill({ category: categories[0], skills: [], gradient: gradients[0], display_order: items.length } as Partial<Skill>);
     load();
   }
 

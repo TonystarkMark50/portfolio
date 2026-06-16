@@ -27,13 +27,13 @@ export default function AdminEducation() {
 
   const { status, triggerSave } = useAutoSave(save);
 
-  async function updateField(id: string, key: keyof Education, val: any) {
+  async function updateField(id: string, key: keyof Education, val: string | number | boolean | string[]) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
     triggerSave();
   }
 
   async function addEntry() {
-    await upsertEducation({ degree: 'New Degree', institution: 'Institution', display_order: items.length } as any);
+    await upsertEducation({ degree: 'New Degree', institution: 'Institution', display_order: items.length } as Partial<Education>);
     load();
   }
 

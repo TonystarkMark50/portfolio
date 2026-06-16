@@ -12,6 +12,7 @@ export default function Projects() {
     if (projects && projects.length > 0) {
       projects.forEach(p => trackProjectView(p.id, p.name));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects?.length]);
 
   if (!projects || projects.length === 0) return null;

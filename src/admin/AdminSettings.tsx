@@ -3,9 +3,26 @@ import { Globe, Palette, Link as LinkIcon, Mail, Github, Linkedin } from 'lucide
 import { getSiteSettings, upsertSiteSettings, getContactInfo, upsertContactInfo } from '../lib/api';
 import ContentEditor, { InlineField, useAutoSave, SaveStatus } from '../components/admin/ContentEditor';
 
+interface SiteSettingsData {
+  site_title: string;
+  seo_description: string;
+  seo_keywords: string;
+  theme: string;
+  favicon_url: string;
+}
+
+interface ContactInfoData {
+  email: string;
+  github: string;
+  linkedin: string;
+  location: string;
+  portfolio_url: string;
+  phone: string;
+}
+
 export default function AdminSettings() {
-  const [settings, setSettings] = useState<any>({ site_title: '', seo_description: '', seo_keywords: '', theme: 'dark', favicon_url: '' });
-  const [contact, setContact] = useState<any>({ email: '', github: '', linkedin: '', location: '', portfolio_url: '', phone: '' });
+  const [settings, setSettings] = useState<SiteSettingsData>({ site_title: '', seo_description: '', seo_keywords: '', theme: 'dark', favicon_url: '' });
+  const [contact, setContact] = useState<ContactInfoData>({ email: '', github: '', linkedin: '', location: '', portfolio_url: '', phone: '' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,12 +49,12 @@ export default function AdminSettings() {
   const { status: contactStatus, triggerSave: triggerContactSave } = useAutoSave(saveContact);
 
   function updateSetting(key: string, val: string) {
-    setSettings((prev: any) => ({ ...prev, [key]: val }));
+    setSettings((prev) => ({ ...prev, [key]: val }));
     triggerSettingsSave();
   }
 
   function updateContact(key: string, val: string) {
-    setContact((prev: any) => ({ ...prev, [key]: val }));
+    setContact((prev) => ({ ...prev, [key]: val }));
     triggerContactSave();
   }
 

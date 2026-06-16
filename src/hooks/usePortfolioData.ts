@@ -22,6 +22,7 @@ export function useSupabaseData<T>(loader: () => Promise<T | null>): { data: T |
         }
       });
     return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return { data, loading, error };

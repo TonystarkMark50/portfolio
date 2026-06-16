@@ -43,7 +43,7 @@ export function educationToItem(e: { degree: string; field: string | null; insti
   };
 }
 
-export function internshipsToData(internships: any[]): InternshipData | null {
+export function internshipsToData(internships: InternshipData[]): InternshipData | null {
   if (internships.length === 0) return null;
   const i = internships[0];
   return {
@@ -112,8 +112,8 @@ export async function loadResumeSummary(): Promise<string> {
   } catch { /* ignore */ }
   try {
     const { data: settings } = await supabase.from('site_settings').select('resume_summary').limit(1).maybeSingle();
-    if (settings && (settings as any).resume_summary) {
-      return (settings as any).resume_summary;
+    if (settings && (settings as Record<string, unknown>).resume_summary) {
+      return (settings as Record<string, unknown>).resume_summary as string;
     }
   } catch { /* ignore */ }
   return '';

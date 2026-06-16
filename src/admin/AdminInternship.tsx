@@ -29,13 +29,13 @@ export default function AdminInternship() {
 
   const { status, triggerSave } = useAutoSave(save);
 
-  async function updateField(id: string, key: keyof Internship, val: any) {
+  async function updateField(id: string, key: keyof Internship, val: string | number | boolean | string[]) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
     triggerSave();
   }
 
   async function addEntry() {
-    await upsertInternship({ organization: 'Organization', role: 'Role', display_order: items.length } as any);
+    await upsertInternship({ organization: 'Organization', role: 'Role', display_order: items.length } as Partial<Internship>);
     load();
   }
 

@@ -223,7 +223,7 @@ export function useResumeData() {
     if (data) setInternships(prev => [...prev, data as Internship]);
     setActiveSection('internship');
   };
-  const updateInternship = (id: string, key: string, val: any) => {
+  const updateInternship = (id: string, key: string, val: string | number | boolean | string[]) => {
     setInternships(prev => prev.map(e => e.id === id ? { ...e, [key]: val } : e));
     scheduleSave('internship');
   };
@@ -237,7 +237,7 @@ export function useResumeData() {
     if (data) setProjects(prev => [...prev, data as Project]);
     setActiveSection('projects');
   };
-  const updateProject = (id: string, key: string, val: any) => {
+  const updateProject = (id: string, key: string, val: string | number | boolean | string[]) => {
     setProjects(prev => prev.map(p => p.id === id ? { ...p, [key]: val } : p));
     scheduleSave('projects');
   };
@@ -250,7 +250,7 @@ export function useResumeData() {
     const { data } = await supabase.from('skills').insert({ category: 'New Category', skills: [], display_order: skills.length }).select().maybeSingle();
     if (data) setSkills(prev => [...prev, data as Skill]);
   };
-  const updateSkillCategory = (id: string, key: string, val: any) => {
+  const updateSkillCategory = (id: string, key: string, val: string | number | boolean | string[]) => {
     setSkills(prev => prev.map(s => s.id === id ? { ...s, [key]: val } : s));
     scheduleSave('skills');
   };
@@ -264,7 +264,7 @@ export function useResumeData() {
     if (data) setCertifications(prev => [...prev, data as Certification]);
     setActiveSection('certifications');
   };
-  const updateCertification = (id: string, key: string, val: any) => {
+  const updateCertification = (id: string, key: string, val: string | number | boolean | string[]) => {
     setCertifications(prev => prev.map(c => c.id === id ? { ...c, [key]: val } : c));
     scheduleSave('certifications');
   };

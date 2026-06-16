@@ -24,13 +24,13 @@ export default function AdminAbout() {
 
   const { status, triggerSave } = useAutoSave(save);
 
-  async function updateField(id: string, key: keyof About, val: any) {
+  async function updateField(id: string, key: keyof About, val: string | number | boolean | string[]) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [key]: val } : i));
     triggerSave();
   }
 
   async function addEntry() {
-    const { data } = await upsertAbout({ title: 'New Section', paragraphs: [], display_order: items.length } as any);
+    const { data } = await upsertAbout({ title: 'New Section', paragraphs: [], display_order: items.length } as Partial<About>);
     if (data) load();
   }
 

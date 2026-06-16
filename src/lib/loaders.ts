@@ -190,7 +190,7 @@ const EXCLUDED_CERT_TITLES = new Set([
   'Healthcare UX Design',
 ]);
 
-function isRealCertification(c: any): boolean {
+function isRealCertification(c: CertificationItem): boolean {
   if (!c.title || !c.organization) return false;
   if (c.title === 'Certification Title' || c.organization === 'Issuing Organization') return false;
   if (EXCLUDED_CERT_TITLES.has(c.title)) return false;
@@ -298,8 +298,8 @@ export async function loadResumeData(): Promise<ResumeData | null> {
   if (!summaryText) {
     try {
       const { data: settings } = await supabase.from('site_settings').select('resume_summary').limit(1).maybeSingle();
-      if (settings && (settings as any).resume_summary) {
-        summaryText = (settings as any).resume_summary;
+      if (settings && (settings as Record<string, unknown>).resume_summary) {
+        summaryText = (settings as Record<string, unknown>).resume_summary as string;
       }
     } catch { /* ignore */ }
   }
