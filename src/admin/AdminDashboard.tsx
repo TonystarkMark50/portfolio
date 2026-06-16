@@ -156,7 +156,12 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (tab: Admi
 
   async function handleSaveSEO() {
     setSaving(true);
-    await supabase.from('site_settings').upsert({ site_title: seoTitle, seo_description: seoDesc });
+    const { data: existing } = await supabase.from('site_settings').select('id').limit(1).maybeSingle();
+    if (existing?.id) {
+      await supabase.from('site_settings').update({ site_title: seoTitle, seo_description: seoDesc }).eq('id', existing.id);
+    } else {
+      await supabase.from('site_settings').insert({ site_title: seoTitle, seo_description: seoDesc });
+    }
     setSaving(false);
   }
 

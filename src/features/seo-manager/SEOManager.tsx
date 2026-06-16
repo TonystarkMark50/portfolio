@@ -19,7 +19,13 @@ interface SEOData {
   og_title: string;
   og_description: string;
   og_image_url: string;
+  og_image_alt: string;
   twitter_handle: string;
+  author: string;
+  canonical_url: string;
+  keywords: string;
+  robots: string;
+  theme_color: string;
 }
 
 interface SaveState {
@@ -43,12 +49,18 @@ function charCountColor(current: number, max: number): string {
 
 export default function SEOManager(_props: Props) {
   const [seo, setSEO] = useState<SEOData>({
-    site_title: '',
-    meta_description: '',
-    og_title: '',
-    og_description: '',
+    site_title: 'Jagadeesh T | Biomedical Engineering Student',
+    meta_description: 'Biomedical Engineering student passionate about healthcare technology, medical devices, IoT solutions, AI-powered healthcare systems, and innovative engineering projects. Explore my portfolio, internships, certifications, and technical achievements.',
+    og_title: 'Jagadeesh T Portfolio | Biomedical Engineering & Healthcare Technology',
+    og_description: 'Explore my Biomedical Engineering journey, healthcare technology projects, internships, certifications, technical skills, and innovative solutions in medical technology and IoT systems.',
     og_image_url: '',
+    og_image_alt: 'Jagadeesh T - Biomedical Engineering Portfolio',
     twitter_handle: '',
+    author: 'Jagadeesh T',
+    canonical_url: 'https://your-domain.netlify.app',
+    keywords: 'Biomedical Engineering, Healthcare Technology, Medical Devices, IoT Healthcare, Biomedical Student, Medical Technology, Engineering Portfolio, Healthcare Innovation, Biomedical Projects, Internet of Things, Clinical Engineering, Medical Equipment, Biomedical Intern, Healthcare Systems, Engineering Student, Portfolio Website',
+    robots: 'index, follow',
+    theme_color: '#2563EB',
   });
   const [loading, setLoading] = useState(true);
   const [saveState, setSaveState] = useState<SaveState>({ status: 'idle' });
@@ -69,13 +81,20 @@ export default function SEOManager(_props: Props) {
 
       if (error && error.code !== 'PGRST116') throw error;
       if (data) {
+        rowIdRef.current = data.id;
         setSEO({
-          site_title: data.site_title ?? '',
-          meta_description: data.meta_description ?? '',
-          og_title: data.og_title ?? '',
-          og_description: data.og_description ?? '',
+          site_title: data.site_title ?? 'Jagadeesh T | Biomedical Engineering Student',
+          meta_description: data.meta_description ?? 'Biomedical Engineering student passionate about healthcare technology, medical devices, IoT solutions, AI-powered healthcare systems, and innovative engineering projects. Explore my portfolio, internships, certifications, and technical achievements.',
+          og_title: data.og_title ?? 'Jagadeesh T Portfolio | Biomedical Engineering & Healthcare Technology',
+          og_description: data.og_description ?? 'Explore my Biomedical Engineering journey, healthcare technology projects, internships, certifications, technical skills, and innovative solutions in medical technology and IoT systems.',
           og_image_url: data.og_image_url ?? '',
+          og_image_alt: data.og_image_alt ?? 'Jagadeesh T - Biomedical Engineering Portfolio',
           twitter_handle: data.twitter_handle ?? '',
+          author: data.author ?? 'Jagadeesh T',
+          canonical_url: data.canonical_url ?? 'https://your-domain.netlify.app',
+          keywords: data.keywords ?? 'Biomedical Engineering, Healthcare Technology, Medical Devices, IoT Healthcare, Biomedical Student, Medical Technology, Engineering Portfolio, Healthcare Innovation, Biomedical Projects, Internet of Things, Clinical Engineering, Medical Equipment, Biomedical Intern, Healthcare Systems, Engineering Student, Portfolio Website',
+          robots: data.robots ?? 'index, follow',
+          theme_color: data.theme_color ?? '#2563EB',
         });
       }
     } catch (err) {
@@ -105,18 +124,36 @@ export default function SEOManager(_props: Props) {
     [seo],
   );
 
+  const rowIdRef = useRef<string | null>(null);
+
   const saveSEO = async (data: SEOData) => {
     try {
-      const { error } = await supabase.from('site_settings').upsert(
-        {
-          id: 1,
-          ...data,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'id' },
-      );
+      if (!rowIdRef.current) {
+        const { data: existing } = await supabase
+          .from('site_settings')
+          .select('id')
+          .limit(1)
+          .maybeSingle();
+        if (existing?.id) {
+          rowIdRef.current = existing.id;
+        }
+      }
 
-      if (error) throw error;
+      if (rowIdRef.current) {
+        const { error } = await supabase
+          .from('site_settings')
+          .update({ ...data, updated_at: new Date().toISOString() })
+          .eq('id', rowIdRef.current);
+        if (error) throw error;
+      } else {
+        const { data: inserted, error } = await supabase
+          .from('site_settings')
+          .insert({ ...data, updated_at: new Date().toISOString() })
+          .select('id')
+          .single();
+        if (error) throw error;
+        if (inserted?.id) rowIdRef.current = inserted.id;
+      }
       setSaveState({ status: 'saved', message: 'Auto-saved' });
       setTimeout(() => {
         setSaveState((prev) =>
@@ -385,9 +422,104 @@ export default function SEOManager(_props: Props) {
                       seo.meta_description ||
                       'Your OG description will appear here...'}
                   </p>
-                </div>
-              </div>
             </div>
+          </div>
+
+          {/* Author */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-1.5">
+              Author
+            </label>
+            <input
+              type="text"
+              value={seo.author}
+              onChange={handleChange('author')}
+              placeholder="Author name"
+              className="w-full px-4 py-2.5 text-sm bg-gray-900 border border-gray-700 rounded-xl text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-colors"
+            />
+          </div>
+
+          {/* Canonical URL */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-1.5">
+              Canonical URL
+            </label>
+            <input
+              type="url"
+              value={seo.canonical_url}
+              onChange={handleChange('canonical_url')}
+              placeholder="https://your-domain.netlify.app"
+              className="w-full px-4 py-2.5 text-sm bg-gray-900 border border-gray-700 rounded-xl text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-colors"
+            />
+          </div>
+
+          {/* OG Image Alt */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-1.5">
+              OG Image Alt Text
+            </label>
+            <input
+              type="text"
+              value={seo.og_image_alt}
+              onChange={handleChange('og_image_alt')}
+              placeholder="Alt text for OG image"
+              className="w-full px-4 py-2.5 text-sm bg-gray-900 border border-gray-700 rounded-xl text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-colors"
+            />
+          </div>
+
+          {/* Keywords */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-1.5">
+              Keywords
+            </label>
+            <textarea
+              value={seo.keywords}
+              onChange={handleChange('keywords')}
+              placeholder="keyword1, keyword2, keyword3"
+              rows={3}
+              className="w-full px-4 py-2.5 text-sm bg-gray-900 border border-gray-700 rounded-xl text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-colors resize-none"
+            />
+          </div>
+
+          {/* Robots */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-1.5">
+              Robots
+            </label>
+            <select
+              value={seo.robots}
+              onChange={handleChange('robots')}
+              className="w-full px-4 py-2.5 text-sm bg-gray-900 border border-gray-700 rounded-xl text-gray-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-colors"
+            >
+              <option value="index, follow">index, follow</option>
+              <option value="noindex, follow">noindex, follow</option>
+              <option value="index, nofollow">index, nofollow</option>
+              <option value="noindex, nofollow">noindex, nofollow</option>
+            </select>
+          </div>
+
+          {/* Theme Color */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-1.5">
+              Theme Color
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={seo.theme_color}
+                onChange={handleChange('theme_color')}
+                className="w-10 h-10 rounded-lg border border-gray-700 bg-transparent cursor-pointer"
+              />
+              <input
+                type="text"
+                value={seo.theme_color}
+                onChange={handleChange('theme_color')}
+                placeholder="#2563EB"
+                className="flex-1 px-4 py-2.5 text-sm bg-gray-900 border border-gray-700 rounded-xl text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-colors"
+              />
+            </div>
+          </div>
+        </div>
           </div>
         </div>
       </div>
