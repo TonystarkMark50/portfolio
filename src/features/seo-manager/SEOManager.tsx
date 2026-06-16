@@ -106,7 +106,7 @@ export default function SEOManager(_props: Props) {
 
   const handleChange = useCallback(
     (field: keyof SEOData) =>
-      (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const value = e.target.value;
         setSEO((prev) => ({ ...prev, [field]: value }));
 
@@ -138,35 +138,44 @@ export default function SEOManager(_props: Props) {
         }
       }
 
-      const baseFields = {
+      const dbFields = {
         site_title: data.site_title,
         seo_description: data.meta_description,
         seo_keywords: data.keywords,
+        og_title: data.og_title,
+        og_description: data.og_description,
+        og_image_url: data.og_image_url,
+        og_image_alt: data.og_image_alt,
+        linkedin_url: data.linkedin_url,
+        author: data.author,
+        canonical_url: data.canonical_url,
+        robots: data.robots,
+        theme_color: data.theme_color,
         updated_at: new Date().toISOString(),
       };
 
       if (rowIdRef.current) {
         const { error } = await supabase
           .from('site_settings')
-          .update({ ...data, seo_description: data.meta_description, seo_keywords: data.keywords, updated_at: new Date().toISOString() })
+          .update(dbFields)
           .eq('id', rowIdRef.current);
         if (error) {
           const { error: retryErr } = await supabase
             .from('site_settings')
-            .update(baseFields)
+            .update({ site_title: dbFields.site_title, seo_description: dbFields.seo_description, seo_keywords: dbFields.seo_keywords, updated_at: dbFields.updated_at })
             .eq('id', rowIdRef.current);
           if (retryErr) throw retryErr;
         }
       } else {
         const { data: inserted, error } = await supabase
           .from('site_settings')
-          .insert({ ...data, seo_description: data.meta_description, seo_keywords: data.keywords, updated_at: new Date().toISOString() })
+          .insert(dbFields)
           .select('id')
           .single();
         if (error) {
           const { data: fallback, error: retryErr } = await supabase
             .from('site_settings')
-            .insert(baseFields)
+            .insert({ site_title: dbFields.site_title, seo_description: dbFields.seo_description, seo_keywords: dbFields.seo_keywords, updated_at: dbFields.updated_at })
             .select('id')
             .single();
           if (retryErr) throw retryErr;
