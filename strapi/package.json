@@ -6,7 +6,7 @@
   "scripts": {
     "develop": "strapi develop",
     "start": "strapi start",
-    "build": "strapi build",
+    "build": "strapi build && node -e \"const{cpSync,readdirSync,rmSync}=require('fs');const{join}=require('path');cpSync('src','dist/src',{recursive:true,filter:f=>require('fs').statSync(f).isDirectory()||f.endsWith('.json')});readdirSync('dist/config').filter(f=>f.endsWith('.d.ts')).forEach(f=>rmSync(join('dist/config',f)))\"",
     "strapi": "strapi"
   },
   "dependencies": {
