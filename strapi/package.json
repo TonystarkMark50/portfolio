@@ -12,11 +12,10 @@
   "dependencies": {
     "@strapi/strapi": "5.49.0",
     "@strapi/plugin-users-permissions": "5.49.0",
-    "@strapi/plugin-i18n": "5.49.0",
     "@strapi/plugin-cloud": "5.49.0",
-    "better-sqlite3": "11.8.1",
-    "pg": "8.13.1",
-    "pg-connection-string": "2.7.0"
+    "better-sqlite3": "12.11.1",
+    "pg": "8.22.0",
+    "pg-connection-string": "2.14.0"
   },
   "engines": {
     "node": ">=18.0.0 <=22.x.x"
