@@ -10,8 +10,11 @@
     "incremental": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "noEmit": true
+    "allowJs": true,
+    "composite": true,
+    "outDir": "dist"
   },
+  "exclude": ["build", "dist", "node_modules"],
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
