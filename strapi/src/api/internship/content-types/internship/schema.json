@@ -1,0 +1,27 @@
+{
+  "kind": "singleType",
+  "collectionName": "internships",
+  "info": {
+    "singularName": "internship",
+    "pluralName": "internships",
+    "displayName": "Internship",
+    "description": "Internship/work experience details"
+  },
+  "options": { "draftAndPublish": true },
+  "pluginOptions": {},
+  "attributes": {
+    "organization": { "type": "string", "required": true },
+    "department": { "type": "string" },
+    "role": { "type": "string", "required": true },
+    "duration": { "type": "string" },
+    "location": { "type": "string" },
+    "type": { "type": "string", "required": true },
+    "description": { "type": "json", "required": true },
+    "responsibilities": { "type": "json", "required": true },
+    "learnings": { "type": "json", "required": true },
+    "impact": { "type": "json", "required": true },
+    "certificate_url": { "type": "string" },
+    "completed": { "type": "boolean", "required": true, "default": false },
+    "display_order": { "type": "integer", "required": true, "default": 0 }
+  }
+}

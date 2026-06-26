@@ -1,0 +1,58 @@
+services:
+  - type: web
+    name: portfolio-strapi
+    env: node
+    region: ohio
+    plan: free
+    healthCheckPath: /_health
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_CLIENT
+        value: postgres
+      - key: DATABASE_HOST
+        fromDatabase:
+          type: postgres
+          name: portfolio-db
+          property: host
+      - key: DATABASE_PORT
+        fromDatabase:
+          type: postgres
+          name: portfolio-db
+          property: port
+      - key: DATABASE_NAME
+        fromDatabase:
+          type: postgres
+          name: portfolio-db
+          property: database
+      - key: DATABASE_USERNAME
+        fromDatabase:
+          type: postgres
+          name: portfolio-db
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          type: postgres
+          name: portfolio-db
+          property: password
+      - key: DATABASE_SSL
+        value: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_JWT_SECRET
+        generateValue: true
+      - key: API_TOKEN_SALT
+        generateValue: true
+      - key: TRANSFER_TOKEN_SALT
+        generateValue: true
+      - key: APP_KEYS
+        generateValue: true
+
+databases:
+  - name: portfolio-db
+    plan: free
+    region: ohio
+    databaseName: strapi
+    ipAllowList: []

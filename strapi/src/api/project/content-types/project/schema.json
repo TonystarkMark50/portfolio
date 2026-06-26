@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "projects",
+  "info": {
+    "singularName": "project",
+    "pluralName": "projects",
+    "displayName": "Project",
+    "description": "Project portfolio entries"
+  },
+  "options": { "draftAndPublish": true },
+  "pluginOptions": {},
+  "attributes": {
+    "name": { "type": "string", "required": true },
+    "type": { "type": "string", "required": true },
+    "status": { "type": "string", "required": true },
+    "completed_date": { "type": "string" },
+    "description": { "type": "text" },
+    "highlights": { "type": "json", "required": true },
+    "technologies": { "type": "json", "required": true },
+    "report_url": { "type": "string" },
+    "image": { "type": "media", "allowedTypes": ["images"], "multiple": false },
+    "github_url": { "type": "string" },
+    "demo_url": { "type": "string" },
+    "featured": { "type": "boolean", "required": true, "default": false },
+    "display_order": { "type": "integer", "required": true, "default": 0 }
+  }
+}

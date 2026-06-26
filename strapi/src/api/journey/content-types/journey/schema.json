@@ -1,0 +1,21 @@
+{
+  "kind": "collectionType",
+  "collectionName": "journeys",
+  "info": {
+    "singularName": "journey",
+    "pluralName": "journeys",
+    "displayName": "Journey",
+    "description": "Career journey timeline milestones"
+  },
+  "options": { "draftAndPublish": true },
+  "pluginOptions": {},
+  "attributes": {
+    "title": { "type": "string", "required": true },
+    "subtitle": { "type": "string" },
+    "description": { "type": "text" },
+    "date": { "type": "string" },
+    "type": { "type": "string", "required": true },
+    "icon": { "type": "string", "required": true },
+    "display_order": { "type": "integer", "required": true, "default": 0 }
+  }
+}

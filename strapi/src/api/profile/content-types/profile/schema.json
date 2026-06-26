@@ -1,0 +1,24 @@
+{
+  "kind": "singleType",
+  "collectionName": "profiles",
+  "info": {
+    "singularName": "profile",
+    "pluralName": "profiles",
+    "displayName": "Profile",
+    "description": "Personal profile information"
+  },
+  "options": { "draftAndPublish": true },
+  "pluginOptions": {},
+  "attributes": {
+    "name": { "type": "string", "required": true },
+    "title": { "type": "string", "required": true },
+    "subtitle": { "type": "string" },
+    "location": { "type": "string", "required": true },
+    "email": { "type": "email", "required": true },
+    "linkedin": { "type": "string", "required": true },
+    "github": { "type": "string", "required": true },
+    "portfolio_url": { "type": "string" },
+    "avatar": { "type": "media", "allowedTypes": ["images"], "multiple": false },
+    "resume": { "type": "media", "allowedTypes": ["files"], "multiple": false }
+  }
+}

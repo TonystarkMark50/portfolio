@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "educations",
+  "info": {
+    "singularName": "education",
+    "pluralName": "educations",
+    "displayName": "Education",
+    "description": "Education history entries"
+  },
+  "options": { "draftAndPublish": true },
+  "pluginOptions": {},
+  "attributes": {
+    "degree": { "type": "string", "required": true },
+    "field": { "type": "string" },
+    "institution": { "type": "string", "required": true },
+    "period": { "type": "string" },
+    "location": { "type": "string" },
+    "gpa": { "type": "string" },
+    "status": { "type": "string" },
+    "current": { "type": "boolean", "required": true, "default": false },
+    "description": { "type": "text" },
+    "display_order": { "type": "integer", "required": true, "default": 0 }
+  }
+}
